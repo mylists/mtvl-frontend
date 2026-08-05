@@ -55,11 +55,10 @@ export const Sidebar: React.FC<SidebarProps> = () => {
           </h3>
           <button
             onClick={() => setActiveCategory('dashboard')}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
-              activeCategory === 'dashboard'
-                ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-inner'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${activeCategory === 'dashboard'
+              ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-inner'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              }`}
           >
             <div className="flex items-center space-x-3">
               <LayoutDashboard className="w-4 h-4 text-indigo-400" />
@@ -89,11 +88,10 @@ export const Sidebar: React.FC<SidebarProps> = () => {
                 <button
                   key={cat.category}
                   onClick={() => setActiveCategory(cat.category)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
-                    isActive
-                      ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-inner'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                  }`}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${isActive
+                    ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-inner'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    }`}
                 >
                   <div className="flex items-center space-x-3">
                     <span className={isActive ? 'text-indigo-400' : 'text-slate-400'}>
@@ -117,10 +115,10 @@ export const Sidebar: React.FC<SidebarProps> = () => {
       <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-purple-950/20 to-slate-900 border border-indigo-500/15">
         <div className="flex items-center space-x-2 mb-1.5">
           <Sparkles className="w-4 h-4 text-indigo-400" />
-          <span className="text-xs font-bold text-slate-200">Goose SQL Backend</span>
+          <span className="text-xs font-bold text-slate-200">Copyright 2026 Contributers</span>
         </div>
         <p className="text-[11px] text-slate-400 leading-relaxed">
-          Dynamic module registry active. Connects directly to REST APIs.
+          Source code located at <a href="https://github.com/mylists">Github</a>
         </p>
       </div>
     </aside>

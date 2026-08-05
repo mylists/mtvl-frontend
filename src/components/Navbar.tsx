@@ -44,10 +44,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               MTVL
             </span>
             <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              v1.0
+              v{__APP_VERSION__}
             </span>
           </div>
-          <p className="text-xs text-slate-400 hidden sm:block">Media Tracking Vector List</p>
+          <p className="text-xs text-slate-400 hidden sm:block">Tracking List</p>
         </div>
       </div>
 
@@ -72,11 +72,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Backend Health Badge */}
         <div
           title={backendConnected ? 'Backend API Connected' : 'Backend Disconnected'}
-          className={`hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${
-            backendConnected
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-              : 'bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse'
-          }`}
+          className={`hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${backendConnected
+            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+            : 'bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse'
+            }`}
         >
           {backendConnected ? (
             <>

@@ -23,7 +23,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ onAddMedia, onOp
         </div>
         <h2 className="text-3xl font-extrabold text-white mb-2">Welcome to MTVL</h2>
         <p className="text-slate-400 max-w-md mb-6 leading-relaxed">
-          Media Tracking Vector List. Log in or create an account to start tracking your favorite movies, TV shows, and books.
+          Log in or create an account to start tracking all your stuffs.
         </p>
         <button
           onClick={onOpenAuth}
