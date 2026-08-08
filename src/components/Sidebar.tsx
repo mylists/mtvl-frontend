@@ -1,14 +1,7 @@
 import React from 'react';
-import {
-  LayoutDashboard,
-  Film,
-  Tv,
-  BookOpen,
-  BarChart3,
-  Layers,
-  Sparkles,
-} from 'lucide-react';
+import { BarChart3, LayoutDashboard, Sparkles } from 'lucide-react';
 import { useCategory } from '../context/CategoryContext';
+import { getCategoryModule } from '../modules';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -17,32 +10,14 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = () => {
   const { categories, activeCategory, setActiveCategory, stats } = useCategory();
 
-  const getCategoryIcon = (categoryName: string) => {
-    switch (categoryName.toLowerCase()) {
-      case 'movies':
-        return <Film className="w-4 h-4" />;
-      case 'tvshows':
-      case 'tv_shows':
-        return <Tv className="w-4 h-4" />;
-      case 'books':
-        return <BookOpen className="w-4 h-4" />;
-      default:
-        return <Layers className="w-4 h-4" />;
-    }
-  };
-
   const getCategoryCount = (categoryName: string) => {
     if (!stats) return null;
-    switch (categoryName.toLowerCase()) {
-      case 'movies':
-        return stats.movies?.total || 0;
-      case 'tvshows':
-        return stats.tv_shows?.total || 0;
-      case 'books':
-        return stats.books?.total || 0;
-      default:
-        return null;
+    const mod = getCategoryModule(categoryName);
+    if (mod.getStatsSummary) {
+      const summary = mod.getStatsSummary(stats);
+      return summary.total;
     }
+    return null;
   };
 
   return (
@@ -55,10 +30,11 @@ export const Sidebar: React.FC<SidebarProps> = () => {
           </h3>
           <button
             onClick={() => setActiveCategory('dashboard')}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${activeCategory === 'dashboard'
-              ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-inner'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
+              activeCategory === 'dashboard'
+                ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-inner'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
           >
             <div className="flex items-center space-x-3">
               <LayoutDashboard className="w-4 h-4 text-indigo-400" />
@@ -81,6 +57,8 @@ export const Sidebar: React.FC<SidebarProps> = () => {
 
           <div className="space-y-1">
             {categories.map((cat) => {
+              const mod = getCategoryModule(cat.category, cat);
+              const CategoryIcon = mod.icon;
               const isActive = activeCategory === cat.category;
               const count = getCategoryCount(cat.category);
 
@@ -88,16 +66,17 @@ export const Sidebar: React.FC<SidebarProps> = () => {
                 <button
                   key={cat.category}
                   onClick={() => setActiveCategory(cat.category)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${isActive
-                    ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-inner'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                    }`}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
+                    isActive
+                      ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-inner'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  }`}
                 >
                   <div className="flex items-center space-x-3">
                     <span className={isActive ? 'text-indigo-400' : 'text-slate-400'}>
-                      {getCategoryIcon(cat.category)}
+                      <CategoryIcon className="w-4 h-4" />
                     </span>
-                    <span>{cat.display_name}</span>
+                    <span>{mod.displayName}</span>
                   </div>
                   {count !== null && (
                     <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-semibold">

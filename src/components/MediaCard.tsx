@@ -1,6 +1,7 @@
 import React from 'react';
-import { Star, Edit3, Trash2, Plus, Film, Tv, BookOpen, Clock, CheckCircle, Eye, XCircle } from 'lucide-react';
-import { Book, MediaItem, MediaStatus, Movie, TVShow } from '../types';
+import { CheckCircle, Clock, Edit3, Eye, Star, Trash2, XCircle } from 'lucide-react';
+import { getCategoryModule } from '../modules';
+import { MediaItem, MediaStatus } from '../types';
 
 interface MediaCardProps {
   item: MediaItem;
@@ -15,15 +16,12 @@ export const MediaCard: React.FC<MediaCardProps> = ({
   onDelete,
   onUpdateProgress,
 }) => {
-  const isMovie = item.categoryType === 'movies';
-  const isTV = item.categoryType === 'tvshows';
-  const isBook = item.categoryType === 'books';
-
-  const movie = item as Movie;
-  const tv = item as TVShow;
-  const book = item as Book;
+  const module = getCategoryModule(item.categoryType);
+  const CategoryIcon = module.icon;
+  const CardDetails = module.CardDetails;
 
   const getStatusBadge = (status: MediaStatus) => {
+    const isBook = module.id === 'books';
     switch (status) {
       case 'watching':
       case 'reading':
@@ -80,19 +78,17 @@ export const MediaCard: React.FC<MediaCardProps> = ({
   };
 
   return (
-    <div className="glass-card rounded-2xl p-5 flex flex-col justify-between group relative overflow-hidden">
+    <div className={`glass-card rounded-2xl p-5 flex flex-col justify-between group relative overflow-hidden ${module.color.borderHover} transition-all`}>
       {/* Top Header Row */}
       <div>
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-1">
-              <span className="p-1 rounded-lg bg-slate-800 text-indigo-400">
-                {isMovie && <Film className="w-3.5 h-3.5" />}
-                {isTV && <Tv className="w-3.5 h-3.5 text-purple-400" />}
-                {isBook && <BookOpen className="w-3.5 h-3.5 text-emerald-400" />}
+              <span className={`p-1 rounded-lg bg-slate-800 ${module.color.iconText}`}>
+                <CategoryIcon className="w-3.5 h-3.5" />
               </span>
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                {item.categoryType}
+                {module.displayName}
               </span>
             </div>
             <h3 className="font-extrabold text-white text-base leading-snug line-clamp-2 group-hover:text-indigo-300 transition-colors">
@@ -103,54 +99,9 @@ export const MediaCard: React.FC<MediaCardProps> = ({
           {getStatusBadge(item.status)}
         </div>
 
-        {/* Details & Subtext */}
-        <div className="space-y-1.5 text-xs text-slate-400 mb-4">
-          {isMovie && (
-            <>
-              {movie.release_year && <p>Year: <strong className="text-slate-200">{movie.release_year}</strong></p>}
-              {movie.director && <p>Director: <strong className="text-slate-200">{movie.director}</strong></p>}
-            </>
-          )}
-
-          {isTV && (
-            <div className="flex items-center justify-between bg-slate-900/60 p-2 rounded-xl border border-slate-800">
-              <span>
-                Season <strong className="text-slate-200">{tv.current_season || 1}</strong> • Ep <strong className="text-slate-200">{tv.current_episode || 0}</strong> / {tv.total_episodes || '∞'}
-              </span>
-
-              {onUpdateProgress && (
-                <button
-                  onClick={() => onUpdateProgress(item, 1)}
-                  className="px-2 py-1 rounded-lg bg-purple-600/30 hover:bg-purple-600 text-purple-200 text-[11px] font-bold transition-all flex items-center space-x-1"
-                  title="Increment episode (+1)"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>Ep</span>
-                </button>
-              )}
-            </div>
-          )}
-
-          {isBook && (
-            <div>
-              {book.author && <p className="mb-1">Author: <strong className="text-slate-200">{book.author}</strong></p>}
-              <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800 flex items-center justify-between">
-                <span>
-                  Progress: <strong className="text-slate-200">{book.pages_read || 0}</strong> / {book.total_pages || '?'} pgs
-                </span>
-                {onUpdateProgress && (
-                  <button
-                    onClick={() => onUpdateProgress(item, 10)}
-                    className="px-2 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600 text-emerald-200 text-[11px] font-bold transition-all flex items-center space-x-1"
-                    title="Increment read (+10 pgs)"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>+10pgs</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+        {/* Plugged-in Module Specific Card Details */}
+        <div className="mb-4">
+          <CardDetails item={item} onUpdateProgress={onUpdateProgress} />
 
           {item.notes && (
             <p className="text-slate-400 italic text-[11px] line-clamp-2 pt-1 border-t border-slate-800/60 mt-2">

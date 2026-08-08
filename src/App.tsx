@@ -1,17 +1,17 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { AuthModal } from './components/AuthModal';
+import { GlobalSearchModal } from './components/GlobalSearchModal';
+import { ImportExportModal } from './components/ImportExportModal';
+import { MediaGrid } from './components/MediaGrid';
+import { MediaModal } from './components/MediaModal';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { StatsDashboard } from './components/StatsDashboard';
-import { MediaGrid } from './components/MediaGrid';
-import { MediaModal } from './components/MediaModal';
-import { GlobalSearchModal } from './components/GlobalSearchModal';
-import { ImportExportModal } from './components/ImportExportModal';
-import { AuthModal } from './components/AuthModal';
 import { UserProfileModal } from './components/UserProfileModal';
 import { useAuth } from './context/AuthContext';
 import { useCategory } from './context/CategoryContext';
-import { booksApi, moviesApi, tvshowsApi } from './api/client';
-import { Book, MediaItem, Movie, TVShow } from './types';
+import { getCategoryModule } from './modules';
+import { MediaItem } from './types';
 
 export const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -41,7 +41,7 @@ export const AppContent: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Fetch media items for current category
+  // Fetch media items for active category module
   const loadCategoryItems = useCallback(async () => {
     if (!isAuthenticated || activeCategory === 'dashboard') {
       setItems([]);
@@ -50,19 +50,9 @@ export const AppContent: React.FC = () => {
 
     setIsLoadingItems(true);
     try {
-      if (activeCategory === 'movies') {
-        const data = await moviesApi.getAll();
-        setItems(data.map((m) => ({ ...m, categoryType: 'movies' })));
-      } else if (activeCategory === 'tvshows' || activeCategory === 'tv_shows') {
-        const data = await tvshowsApi.getAll();
-        setItems(data.map((t) => ({ ...t, categoryType: 'tvshows' })));
-      } else if (activeCategory === 'books') {
-        const data = await booksApi.getAll();
-        setItems(data.map((b) => ({ ...b, categoryType: 'books' })));
-      } else {
-        // Fallback or custom module handler
-        setItems([]);
-      }
+      const module = getCategoryModule(activeCategory);
+      const data = await module.api.getAll();
+      setItems(data);
     } catch (err) {
       console.error('Failed to load category items', err);
       setItems([]);
@@ -75,44 +65,27 @@ export const AppContent: React.FC = () => {
     loadCategoryItems();
   }, [loadCategoryItems]);
 
-  // Handle Save (Create / Edit)
+  // Handle Save (Create / Edit via pluggable module API)
   const handleSaveMediaItem = async (payload: Partial<MediaItem>) => {
     const cat = payload.categoryType || activeCategory;
+    const module = getCategoryModule(cat);
+
     if (payload.id) {
-      // Edit
-      if (cat === 'movies') {
-        await moviesApi.update(payload.id, payload as Partial<Movie>);
-      } else if (cat === 'tvshows' || cat === 'tv_shows') {
-        await tvshowsApi.update(payload.id, payload as Partial<TVShow>);
-      } else if (cat === 'books') {
-        await booksApi.update(payload.id, payload as Partial<Book>);
-      }
+      await module.api.update(payload.id, payload);
     } else {
-      // Create
-      if (cat === 'movies') {
-        await moviesApi.create(payload as Partial<Movie>);
-      } else if (cat === 'tvshows' || cat === 'tv_shows') {
-        await tvshowsApi.create(payload as Partial<TVShow>);
-      } else if (cat === 'books') {
-        await booksApi.create(payload as Partial<Book>);
-      }
+      await module.api.create(payload);
     }
 
     await loadCategoryItems();
     await refreshStats();
   };
 
-  // Handle Delete
+  // Handle Delete (via pluggable module API)
   const handleDeleteMediaItem = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
     try {
-      if (activeCategory === 'movies') {
-        await moviesApi.delete(id);
-      } else if (activeCategory === 'tvshows' || activeCategory === 'tv_shows') {
-        await tvshowsApi.delete(id);
-      } else if (activeCategory === 'books') {
-        await booksApi.delete(id);
-      }
+      const module = getCategoryModule(activeCategory);
+      await module.api.delete(id);
       await loadCategoryItems();
       await refreshStats();
     } catch (err) {
@@ -120,17 +93,12 @@ export const AppContent: React.FC = () => {
     }
   };
 
-  // Handle quick progress increment (+1 ep or +10 pgs)
+  // Handle quick progress increment via pluggable module progress handler
   const handleUpdateProgress = async (item: MediaItem, increment: number) => {
     try {
-      if (item.categoryType === 'tvshows') {
-        const tv = item as TVShow;
-        const newEp = (tv.current_episode || 0) + increment;
-        await tvshowsApi.update(tv.id, { current_episode: newEp });
-      } else if (item.categoryType === 'books') {
-        const bk = item as Book;
-        const newPgs = (bk.pages_read || 0) + increment;
-        await booksApi.update(bk.id, { pages_read: newPgs });
+      const module = getCategoryModule(item.categoryType);
+      if (module.updateProgress) {
+        await module.updateProgress(item, increment, module.api);
       }
       await loadCategoryItems();
       await refreshStats();

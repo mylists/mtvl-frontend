@@ -1,7 +1,8 @@
 import React from 'react';
-import { Film, Tv, BookOpen, Star, Plus, ArrowRight, Activity, TrendingUp } from 'lucide-react';
-import { useCategory } from '../context/CategoryContext';
+import { Activity, ArrowRight, Film, Star, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useCategory } from '../context/CategoryContext';
+import { getAllCategoryModules, getCategoryModule } from '../modules';
 
 interface StatsDashboardProps {
   onAddMedia: (category: string) => void;
@@ -12,8 +13,14 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ onAddMedia, onOp
   const { stats, categories, setActiveCategory } = useCategory();
   const { isAuthenticated } = useAuth();
 
-  const totalTracked =
-    (stats?.movies?.total || 0) + (stats?.tv_shows?.total || 0) + (stats?.books?.total || 0);
+  const registeredModules = getAllCategoryModules();
+
+  const totalTracked = registeredModules.reduce((acc, mod) => {
+    if (mod.getStatsSummary) {
+      return acc + mod.getStatsSummary(stats).total;
+    }
+    return acc;
+  }, 0);
 
   if (!isAuthenticated) {
     return (
@@ -49,128 +56,67 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ onAddMedia, onOp
             Track, Rate & Discover
           </h1>
           <p className="text-slate-300 text-sm leading-relaxed mb-6">
-            You currently have <strong className="text-indigo-300">{totalTracked} items</strong> logged across movies, TV series, and books.
+            You currently have <strong className="text-indigo-300">{totalTracked} items</strong> logged across {registeredModules.map((m) => m.displayName.toLowerCase()).join(', ')}.
           </p>
           <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => onAddMedia('movies')}
-              className="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 transition-all flex items-center space-x-2 shadow-lg shadow-indigo-600/30"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Movie</span>
-            </button>
-            <button
-              onClick={() => onAddMedia('tvshows')}
-              className="px-4 py-2.5 rounded-xl bg-purple-600 text-white text-xs font-bold hover:bg-purple-500 transition-all flex items-center space-x-2 shadow-lg shadow-purple-600/30"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add TV Show</span>
-            </button>
-            <button
-              onClick={() => onAddMedia('books')}
-              className="px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition-all flex items-center space-x-2 shadow-lg shadow-emerald-600/30"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Book</span>
-            </button>
+            {registeredModules.map((mod) => {
+              const Icon = mod.icon;
+              return (
+                <button
+                  key={mod.id}
+                  onClick={() => onAddMedia(mod.id)}
+                  className={`px-4 py-2.5 rounded-xl ${mod.color.button} text-white text-xs font-bold transition-all flex items-center space-x-2`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>Add {mod.singularName}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Movies Card */}
-        <div className="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col justify-between hover:border-indigo-500/40 transition-all">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                <Film className="w-5 h-5" />
+        {registeredModules.map((mod) => {
+          const Icon = mod.icon;
+          const summary = mod.getStatsSummary ? mod.getStatsSummary(stats) : { total: 0, avgRating: 0 };
+
+          return (
+            <div
+              key={mod.id}
+              className={`glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col justify-between ${mod.color.borderHover} transition-all`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-10 h-10 rounded-xl ${mod.color.iconBg} border flex items-center justify-center ${mod.color.iconText}`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{mod.displayName}</span>
+                </div>
+                <div className="flex items-baseline space-x-2">
+                  <span className="text-4xl font-extrabold text-white">{summary.total}</span>
+                  <span className="text-xs text-slate-400">logged</span>
+                </div>
+                <div className={`mt-3 flex items-center space-x-1.5 text-xs ${mod.color.accentText}`}>
+                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  <span className="font-bold">
+                    {summary.avgRating ? summary.avgRating.toFixed(1) : '0.0'} / 5.0
+                  </span>
+                  <span className="text-slate-400 text-[11px] ml-1">(Average rating)</span>
+                </div>
               </div>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Movies</span>
-            </div>
-            <div className="flex items-baseline space-x-2">
-              <span className="text-4xl font-extrabold text-white">{stats?.movies?.total || 0}</span>
-              <span className="text-xs text-slate-400">logged</span>
-            </div>
-            <div className="mt-3 flex items-center space-x-1.5 text-xs text-indigo-300">
-              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-              <span className="font-bold">
-                {stats?.movies?.avg_rating ? stats.movies.avg_rating.toFixed(1) : '0.0'} / 5.0
-              </span>
-              <span className="text-slate-400 text-[11px] ml-1">(Average rating)</span>
-            </div>
-          </div>
 
-          <button
-            onClick={() => setActiveCategory('movies')}
-            className="mt-5 w-full py-2 rounded-xl glass-card text-xs font-semibold text-indigo-300 hover:text-white flex items-center justify-center space-x-1 transition-all"
-          >
-            <span>View Movies</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* TV Shows Card */}
-        <div className="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col justify-between hover:border-purple-500/40 transition-all">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                <Tv className="w-5 h-5" />
-              </div>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">TV Shows</span>
+              <button
+                onClick={() => setActiveCategory(mod.id)}
+                className={`mt-5 w-full py-2 rounded-xl glass-card text-xs font-semibold ${mod.color.accentText} hover:text-white flex items-center justify-center space-x-1 transition-all`}
+              >
+                <span>View {mod.displayName}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <div className="flex items-baseline space-x-2">
-              <span className="text-4xl font-extrabold text-white">{stats?.tv_shows?.total || 0}</span>
-              <span className="text-xs text-slate-400">series</span>
-            </div>
-            <div className="mt-3 flex items-center space-x-1.5 text-xs text-purple-300">
-              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-              <span className="font-bold">
-                {stats?.tv_shows?.avg_rating ? stats.tv_shows.avg_rating.toFixed(1) : '0.0'} / 5.0
-              </span>
-              <span className="text-slate-400 text-[11px] ml-1">(Average rating)</span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setActiveCategory('tvshows')}
-            className="mt-5 w-full py-2 rounded-xl glass-card text-xs font-semibold text-purple-300 hover:text-white flex items-center justify-center space-x-1 transition-all"
-          >
-            <span>View TV Shows</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* Books Card */}
-        <div className="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col justify-between hover:border-emerald-500/40 transition-all">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Books</span>
-            </div>
-            <div className="flex items-baseline space-x-2">
-              <span className="text-4xl font-extrabold text-white">{stats?.books?.total || 0}</span>
-              <span className="text-xs text-slate-400">books</span>
-            </div>
-            <div className="mt-3 flex items-center space-x-1.5 text-xs text-emerald-300">
-              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-              <span className="font-bold">
-                {stats?.books?.avg_rating ? stats.books.avg_rating.toFixed(1) : '0.0'} / 5.0
-              </span>
-              <span className="text-slate-400 text-[11px] ml-1">(Average rating)</span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setActiveCategory('books')}
-            className="mt-5 w-full py-2 rounded-xl glass-card text-xs font-semibold text-emerald-300 hover:text-white flex items-center justify-center space-x-1 transition-all"
-          >
-            <span>View Books</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
+          );
+        })}
       </div>
 
       {/* Dynamic Module Showcase */}
@@ -184,22 +130,25 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ onAddMedia, onOp
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categories.map((cat) => (
-            <div
-              key={cat.category}
-              onClick={() => setActiveCategory(cat.category)}
-              className="cursor-pointer p-4 rounded-xl glass-card border border-slate-800/80 hover:border-indigo-500/40 transition-all flex items-start justify-between"
-            >
-              <div>
-                <h4 className="font-bold text-white text-sm mb-1">{cat.display_name}</h4>
-                <p className="text-xs text-slate-400 line-clamp-2">{cat.description}</p>
-                <span className="inline-block mt-2 font-mono text-[10px] text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
-                  {cat.endpoint}
-                </span>
+          {categories.map((cat) => {
+            const mod = getCategoryModule(cat.category, cat);
+            return (
+              <div
+                key={cat.category}
+                onClick={() => setActiveCategory(cat.category)}
+                className="cursor-pointer p-4 rounded-xl glass-card border border-slate-800/80 hover:border-indigo-500/40 transition-all flex items-start justify-between"
+              >
+                <div>
+                  <h4 className="font-bold text-white text-sm mb-1">{mod.displayName}</h4>
+                  <p className="text-xs text-slate-400 line-clamp-2">{cat.description || mod.description}</p>
+                  <span className="inline-block mt-2 font-mono text-[10px] text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+                    {cat.endpoint || mod.endpoint}
+                  </span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-400" />
               </div>
-              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-400" />
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

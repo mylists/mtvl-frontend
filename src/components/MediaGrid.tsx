@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, ArrowUpDown, Film, Tv, BookOpen, Layers } from 'lucide-react';
+import { ArrowUpDown, Filter, Plus, Search } from 'lucide-react';
+import { getCategoryModule } from '../modules';
 import { MediaItem } from '../types';
 import { MediaCard } from './MediaCard';
 
@@ -15,7 +16,7 @@ interface MediaGridProps {
 }
 
 export const MediaGrid: React.FC<MediaGridProps> = ({
-  categoryTitle,
+  categoryTitle: _categoryTitle,
   categoryType,
   items,
   isLoading,
@@ -24,6 +25,9 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
   onDeleteItem,
   onUpdateProgress,
 }) => {
+  const module = getCategoryModule(categoryType);
+  const HeaderIcon = module.icon;
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'title' | 'rating' | 'id'>('id');
@@ -40,30 +44,16 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
       return b.id - a.id;
     });
 
-  const getHeaderIcon = () => {
-    switch (categoryType.toLowerCase()) {
-      case 'movies':
-        return <Film className="w-6 h-6 text-indigo-400" />;
-      case 'tvshows':
-      case 'tv_shows':
-        return <Tv className="w-6 h-6 text-purple-400" />;
-      case 'books':
-        return <BookOpen className="w-6 h-6 text-emerald-400" />;
-      default:
-        return <Layers className="w-6 h-6 text-indigo-400" />;
-    }
-  };
-
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-6 rounded-3xl border border-slate-800">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-            {getHeaderIcon()}
+          <div className={`w-12 h-12 rounded-2xl ${module.color.iconBg} border flex items-center justify-center`}>
+            <HeaderIcon className={`w-6 h-6 ${module.color.iconText}`} />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">{categoryTitle}</h1>
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">{module.displayName}</h1>
             <p className="text-xs text-slate-400">
               Showing {filteredItems.length} of {items.length} logged items
             </p>
@@ -72,10 +62,10 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
 
         <button
           onClick={onAddItem}
-          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 hover:opacity-95 transition-all flex items-center justify-center space-x-2"
+          className={`px-5 py-2.5 rounded-xl ${module.color.button} text-white font-bold text-sm transition-all flex items-center justify-center space-x-2`}
         >
           <Plus className="w-4 h-4" />
-          <span>Add New {categoryTitle.slice(0, -1)}</span>
+          <span>Add New {module.singularName}</span>
         </button>
       </div>
 
@@ -86,7 +76,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
           <input
             type="text"
-            placeholder={`Filter ${categoryTitle}...`}
+            placeholder={`Filter ${module.displayName}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full glass-input pl-9 pr-4 py-2 rounded-xl text-sm"
@@ -95,25 +85,29 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
 
         {/* Status Pills */}
         <div className="flex items-center space-x-1 overflow-x-auto w-full md:w-auto py-1">
-          {['all', 'watching', 'reading', 'completed', 'plan_to_watch', 'dropped'].map((st) => {
-            if (st === 'reading' && categoryType !== 'books') return null;
-            if (st === 'watching' && categoryType === 'books') return null;
-            if (st === 'plan_to_watch' && categoryType === 'books') st = 'plan_to_read';
-
-            const isActive = statusFilter === st;
+          <button
+            onClick={() => setStatusFilter('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+              statusFilter === 'all'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            All Statuses
+          </button>
+          {module.statuses.map((st) => {
+            const isActive = statusFilter === st.value;
             return (
               <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
+                key={st.value}
+                onClick={() => setStatusFilter(st.value)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                   isActive
                     ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                 }`}
               >
-                {st === 'all'
-                  ? 'All Statuses'
-                  : st.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                {st.label}
               </button>
             );
           })}
