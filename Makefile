@@ -1,4 +1,6 @@
-.PHONY: help install dev build lint preview clean
+DOCKER := docker
+
+.PHONY: help install dev build lint preview clean image-build upload
 
 # Default target
 .DEFAULT_GOAL := help
@@ -25,3 +27,19 @@ preview: ## Preview the production build locally
 
 clean: ## Remove build artifacts and node_modules
 	rm -rf dist node_modules
+
+image-build:
+	$(DOCKER) buildx build \
+		--file docker/Dockerfile \
+		--tag $(REGISTRY)/$(IMAGE):$(VERSION) \
+		--tag $(REGISTRY)/$(IMAGE):latest \
+		--target deploy .
+
+upload:
+	$(DOCKER) buildx build \
+		--file docker/Dockerfile \
+		--push \
+		--platform linux/amd64,linux/arm64 \
+		--tag $(REGISTRY)/$(IMAGE):$(VERSION) \
+		--tag $(REGISTRY)/$(IMAGE):latest \
+		--target deploy .
