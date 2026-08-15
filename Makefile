@@ -1,5 +1,11 @@
 DOCKER := docker
 
+REGISTRY := mylists
+
+IMAGE = $(file < TAG)
+VERSION = $(file < VERSION)
+TAG = $(IMAGE):$(VERSION)
+
 .PHONY: help install dev build lint preview clean image-build upload
 
 # Default target
