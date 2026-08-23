@@ -1,8 +1,21 @@
 import React from 'react';
 import { Film } from 'lucide-react';
-import { moviesApi } from '../../api/client';
-import { Movie } from '../../types';
-import { CardDetailsProps, CategoryModule, FormFieldsProps } from '../types';
+import { isNotFoundError, moviesApi } from '../../api/client';
+import { Movie, MovieListItem } from '../../types';
+import { CardDetailsProps, CategoryModule, FormFieldsProps, statsForCategory } from '../types';
+
+type MovieRecord = MovieListItem & { categoryType?: string; onList?: boolean };
+
+function withMovieMeta(item: Movie | MovieListItem, onList: boolean): MovieRecord {
+  return {
+    rating: 0,
+    notes: '',
+    status: 'plan_to_watch',
+    ...item,
+    categoryType: 'movies',
+    onList,
+  };
+}
 
 const MovieFormFields: React.FC<FormFieldsProps> = ({ formData, onChange }) => {
   return (
@@ -34,21 +47,21 @@ const MovieCardDetails: React.FC<CardDetailsProps> = ({ item }) => {
   const movie = item as Movie;
   return (
     <div className="space-y-1 text-xs text-slate-400">
-      {movie.release_year && (
+      {movie.release_year ? (
         <p>
           Year: <strong className="text-slate-200">{movie.release_year}</strong>
         </p>
-      )}
-      {movie.director && (
+      ) : null}
+      {movie.director ? (
         <p>
           Director: <strong className="text-slate-200">{movie.director}</strong>
         </p>
-      )}
+      ) : null}
     </div>
   );
 };
 
-export const moviesModule: CategoryModule<Movie> = {
+export const moviesModule: CategoryModule<MovieRecord> = {
   id: 'movies',
   displayName: 'Movies',
   singularName: 'Movie',
@@ -71,16 +84,65 @@ export const moviesModule: CategoryModule<Movie> = {
     { value: 'dropped', label: 'Dropped' },
     { value: 'on_hold', label: 'On Hold' },
   ],
-  defaultStatus: 'watching',
+  defaultStatus: 'plan_to_watch',
   api: {
     getAll: async () => {
-      const data = await moviesApi.getAll();
-      return data.map((m) => ({ ...m, categoryType: 'movies' }));
+      const data = await moviesApi.getList();
+      return data.map((m) => withMovieMeta(m, true));
     },
-    getById: moviesApi.getById,
-    create: moviesApi.create,
-    update: moviesApi.update,
-    delete: moviesApi.delete,
+    getById: async (id) => {
+      try {
+        return withMovieMeta(await moviesApi.getListItem(id), true);
+      } catch (err) {
+        if (!isNotFoundError(err)) throw err;
+        return withMovieMeta(await moviesApi.getById(id), false);
+      }
+    },
+    create: async (data) => {
+      const catalog = await moviesApi.create({
+        title: data.title ?? '',
+        release_year: data.release_year,
+        director: data.director,
+      });
+      const listItem = await moviesApi.addToList({
+        id: catalog.id,
+        status: data.status,
+        rating: data.rating,
+        notes: data.notes,
+      });
+      return withMovieMeta(listItem, true);
+    },
+    update: async (id, data) => {
+      await moviesApi.update(id, {
+        title: data.title,
+        release_year: data.release_year,
+        director: data.director,
+      });
+      try {
+        return withMovieMeta(
+          await moviesApi.updateList(id, {
+            status: data.status,
+            rating: data.rating,
+            notes: data.notes,
+          }),
+          true,
+        );
+      } catch (err) {
+        if (!isNotFoundError(err)) throw err;
+        return withMovieMeta(
+          await moviesApi.addToList({
+            id,
+            status: data.status,
+            rating: data.rating,
+            notes: data.notes,
+          }),
+          true,
+        );
+      }
+    },
+    delete: async (id) => {
+      await moviesApi.removeFromList(id);
+    },
   },
   getDefaultFormState: () => ({
     release_year: new Date().getFullYear(),
@@ -88,8 +150,5 @@ export const moviesModule: CategoryModule<Movie> = {
   }),
   FormFields: MovieFormFields,
   CardDetails: MovieCardDetails,
-  getStatsSummary: (stats) => ({
-    total: stats?.movies?.total || 0,
-    avgRating: stats?.movies?.avg_rating || 0,
-  }),
+  getStatsSummary: (stats) => statsForCategory(stats, 'movies'),
 };

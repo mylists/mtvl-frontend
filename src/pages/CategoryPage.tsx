@@ -16,8 +16,7 @@ export const CategoryPage: React.FC = () => {
 
   const activeCategory = normalizeCategorySlug(categoryParam || '');
   const isNewItem = itemId === 'new';
-  const numericItemId = itemId && itemId !== 'new' ? Number(itemId) : null;
-  const hasValidItemId = numericItemId !== null && Number.isFinite(numericItemId);
+  const resolvedItemId = itemId && !isNewItem ? itemId : null;
 
   const [items, setItems] = useState<MediaItem[]>([]);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
@@ -72,12 +71,12 @@ export const CategoryPage: React.FC = () => {
       return;
     }
 
-    if (!hasValidItemId) {
+    if (!resolvedItemId) {
       setEditingItem(null);
       return;
     }
 
-    const fromList = items.find((item) => item.id === numericItemId);
+    const fromList = items.find((item) => item.id === resolvedItemId);
     if (fromList) {
       setEditingItem(fromList);
       setIsResolvingItem(false);
@@ -92,7 +91,7 @@ export const CategoryPage: React.FC = () => {
     let cancelled = false;
     setIsResolvingItem(true);
     getCategoryModule(activeCategory)
-      .api.getById(numericItemId)
+      .api.getById(resolvedItemId)
       .then((item) => {
         if (!cancelled) {
           setEditingItem({ ...item, categoryType: item.categoryType || activeCategory });
@@ -108,7 +107,7 @@ export const CategoryPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [activeCategory, hasValidItemId, isAuthenticated, isNewItem, itemId, items, numericItemId]);
+  }, [activeCategory, isAuthenticated, isNewItem, itemId, items, resolvedItemId]);
 
   const handleSaveMediaItem = async (payload: Partial<MediaItem>) => {
     const cat = payload.categoryType || activeCategory;
@@ -124,17 +123,17 @@ export const CategoryPage: React.FC = () => {
     await refreshStats();
   };
 
-  const handleDeleteMediaItem = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
+  const handleDeleteMediaItem = async (id: string) => {
+    if (!window.confirm('Remove this item from your list? The shared catalog entry is kept.')) return;
     try {
       await getCategoryModule(activeCategory).api.delete(id);
-      if (numericItemId === id) {
+      if (resolvedItemId === id) {
         closeItem();
       }
       await loadCategoryItems();
       await refreshStats();
     } catch (err) {
-      console.error('Failed to delete item', err);
+      console.error('Failed to remove item from list', err);
     }
   };
 
@@ -151,7 +150,7 @@ export const CategoryPage: React.FC = () => {
     }
   };
 
-  const isModalOpen = isAuthenticated && (isNewItem || hasValidItemId);
+  const isModalOpen = isAuthenticated && (isNewItem || Boolean(resolvedItemId));
 
   if (!isAuthenticated) {
     return (

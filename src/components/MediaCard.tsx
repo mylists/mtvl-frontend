@@ -7,7 +7,7 @@ import { MediaItem, MediaStatus } from '../types';
 
 interface MediaCardProps {
   item: MediaItem;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
   onUpdateProgress?: (item: MediaItem, increment: number) => void;
 }
 
@@ -147,7 +147,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
           <button
             onClick={() => onDelete(item.id)}
             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-            title="Delete item"
+            title="Remove from list"
           >
             <Trash2 className="w-4 h-4" />
           </button>

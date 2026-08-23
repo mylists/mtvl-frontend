@@ -22,30 +22,31 @@ export interface CardDetailsProps<T = any> {
 }
 
 export interface BaseMediaRecord {
-  id: number;
+  id: string;
   title: string;
   status: MediaStatus;
   rating: number;
   notes?: string;
   categoryType?: string;
+  onList?: boolean;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface CategoryModuleApi<T = MediaItem> {
   getAll: () => Promise<T[]>;
-  getById: (id: number) => Promise<T>;
+  getById: (id: string) => Promise<T>;
   create: (data: Partial<T>) => Promise<T>;
-  update: (id: number, data: Partial<T>) => Promise<T>;
-  delete: (id: number) => Promise<void>;
+  update: (id: string, data: Partial<T>) => Promise<T>;
+  delete: (id: string) => Promise<void>;
 }
 
 export interface CategoryModule<T extends BaseMediaRecord = MediaItem> {
   id: string; // e.g. 'movies', 'tvshows', 'books'
-  displayName: string; // e.g. 'Movies', 'TV Shows', 'Books'
-  singularName: string; // e.g. 'Movie', 'TV Show', 'Book'
+  displayName: string;
+  singularName: string;
   description: string;
-  endpoint: string; // e.g. '/api/v1/movies'
+  endpoint: string;
   icon: React.ComponentType<{ className?: string }>;
   color: CategoryModuleColor;
 
@@ -60,4 +61,15 @@ export interface CategoryModule<T extends BaseMediaRecord = MediaItem> {
 
   updateProgress?: (item: T, increment: number, api: CategoryModuleApi<T>) => Promise<void>;
   getStatsSummary?: (stats: StatsOverview | null) => { total: number; avgRating: number };
+}
+
+export function statsForCategory(
+  stats: StatsOverview | null,
+  key: string,
+): { total: number; avgRating: number } {
+  const category = stats?.categories?.[key];
+  return {
+    total: category?.total || 0,
+    avgRating: category?.average_rating || 0,
+  };
 }

@@ -138,7 +138,11 @@ export const MediaModal: React.FC<MediaModalProps> = ({
             </button>
           )}
         </div>
-        <p className="text-xs text-slate-400 mb-5">Fill in the details below to update your tracking list.</p>
+        <p className="text-xs text-slate-400 mb-5">
+          {initialData && initialData.onList === false
+            ? 'This item is in the shared catalog. Save to add it to your list.'
+            : 'Fill in the details below to update your tracking list.'}
+        </p>
 
         {error && (
           <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold">
@@ -230,7 +234,13 @@ export const MediaModal: React.FC<MediaModalProps> = ({
               className={`px-5 py-2.5 rounded-xl ${module.color.button} text-white font-bold text-xs transition-all flex items-center space-x-1.5`}
             >
               <Save className="w-4 h-4" />
-              <span>{isSubmitting ? 'Saving...' : 'Save Record'}</span>
+              <span>
+                {isSubmitting
+                  ? 'Saving...'
+                  : initialData && initialData.onList === false
+                    ? 'Add to List'
+                    : 'Save Record'}
+              </span>
             </button>
           </div>
         </form>

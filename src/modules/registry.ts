@@ -1,6 +1,6 @@
 import React from 'react';
 import { Layers } from 'lucide-react';
-import { apiClient } from '../api/client';
+import { apiClient, isNotFoundError } from '../api/client';
 import { CategoryInfo, MediaItem } from '../types';
 import { booksModule } from './books/booksModule';
 import { moviesModule } from './movies/moviesModule';
@@ -23,8 +23,14 @@ registerCategoryModule(booksModule);
 // Map backend variant name 'tv_shows' to tvshows
 modulesRegistry.set('tv_shows', tvshowsModule);
 
+function unwrapItems<T>(data: T[] | { data?: T[] }): T[] {
+  if (Array.isArray(data)) return data;
+  return data?.data ?? [];
+}
+
 /**
  * Create a generic fallback module for unknown or dynamically added categories.
+ * Assumes the backend follows the shared catalog + /list convention.
  */
 export function createGenericCategoryModule(category: string, info?: Partial<CategoryInfo>): CategoryModule<MediaItem> {
   const displayName = info?.display_name || category.charAt(0).toUpperCase() + category.slice(1);
@@ -60,23 +66,55 @@ export function createGenericCategoryModule(category: string, info?: Partial<Cat
     defaultStatus: 'watching',
     api: {
       getAll: async () => {
-        const res = await apiClient.get<MediaItem[]>(endpoint);
-        return res.data.map((item) => ({ ...item, categoryType: category }));
+        const res = await apiClient.get(`${endpoint}/list`);
+        return unwrapItems<MediaItem>(res.data).map((item) => ({
+          ...item,
+          categoryType: category,
+          onList: true,
+        }));
       },
-      getById: async (id: number) => {
-        const res = await apiClient.get<MediaItem>(`${endpoint}/${id}`);
-        return res.data;
+      getById: async (id: string) => {
+        try {
+          const res = await apiClient.get<MediaItem>(`${endpoint}/list/${id}`);
+          return { ...res.data, categoryType: category, onList: true };
+        } catch (err) {
+          if (!isNotFoundError(err)) throw err;
+          const res = await apiClient.get<MediaItem>(`${endpoint}/${id}`);
+          return { ...res.data, categoryType: category, onList: false };
+        }
       },
       create: async (data: Partial<MediaItem>) => {
-        const res = await apiClient.post<MediaItem>(endpoint, data);
-        return res.data;
+        const catalog = await apiClient.post<MediaItem>(endpoint, { title: data.title });
+        const list = await apiClient.post<MediaItem>(`${endpoint}/list`, {
+          id: catalog.data.id,
+          status: data.status,
+          rating: data.rating,
+          notes: data.notes,
+        });
+        return { ...list.data, categoryType: category, onList: true };
       },
-      update: async (id: number, data: Partial<MediaItem>) => {
-        const res = await apiClient.put<MediaItem>(`${endpoint}/${id}`, data);
-        return res.data;
+      update: async (id: string, data: Partial<MediaItem>) => {
+        await apiClient.put(`${endpoint}/${id}`, { title: data.title });
+        try {
+          const res = await apiClient.put<MediaItem>(`${endpoint}/list/${id}`, {
+            status: data.status,
+            rating: data.rating,
+            notes: data.notes,
+          });
+          return { ...res.data, categoryType: category, onList: true };
+        } catch (err) {
+          if (!isNotFoundError(err)) throw err;
+          const res = await apiClient.post<MediaItem>(`${endpoint}/list`, {
+            id,
+            status: data.status,
+            rating: data.rating,
+            notes: data.notes,
+          });
+          return { ...res.data, categoryType: category, onList: true };
+        }
       },
-      delete: async (id: number) => {
-        await apiClient.delete(`${endpoint}/${id}`);
+      delete: async (id: string) => {
+        await apiClient.delete(`${endpoint}/list/${id}`);
       },
     },
     getDefaultFormState: () => ({}),

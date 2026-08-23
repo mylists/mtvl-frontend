@@ -16,12 +16,14 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ onOpenAuth }) =>
 
   const registeredModules = getAllCategoryModules();
 
-  const totalTracked = registeredModules.reduce((acc, mod) => {
-    if (mod.getStatsSummary) {
-      return acc + mod.getStatsSummary(stats).total;
-    }
-    return acc;
-  }, 0);
+  const totalTracked =
+    stats?.total_items ??
+    registeredModules.reduce((acc, mod) => {
+      if (mod.getStatsSummary) {
+        return acc + mod.getStatsSummary(stats).total;
+      }
+      return acc;
+    }, 0);
 
   if (!isAuthenticated) {
     return (

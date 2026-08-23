@@ -1,77 +1,27 @@
 import React from 'react';
-import { BookOpen, Plus } from 'lucide-react';
-import { booksApi } from '../../api/client';
-import { Book } from '../../types';
-import { CardDetailsProps, CategoryModule, FormFieldsProps } from '../types';
+import { BookOpen } from 'lucide-react';
+import { booksApi, isNotFoundError } from '../../api/client';
+import { Book, BookListItem } from '../../types';
+import { CardDetailsProps, CategoryModule, FormFieldsProps, statsForCategory } from '../types';
 
-const BookFormFields: React.FC<FormFieldsProps> = ({ formData, onChange }) => {
-  return (
-    <div className="space-y-3">
-      <div>
-        <label className="block text-xs font-semibold text-slate-300 mb-1">Author</label>
-        <input
-          type="text"
-          placeholder="Frank Herbert"
-          value={formData.author ?? ''}
-          onChange={(e) => onChange({ author: e.target.value })}
-          className="w-full glass-input px-3.5 py-2 rounded-xl text-sm"
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1">Pages Read</label>
-          <input
-            type="number"
-            min="0"
-            value={formData.pages_read ?? 0}
-            onChange={(e) => onChange({ pages_read: Number(e.target.value) })}
-            className="w-full glass-input px-3 py-2 rounded-xl text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1">Total Pages</label>
-          <input
-            type="number"
-            min="1"
-            value={formData.total_pages ?? 300}
-            onChange={(e) => onChange({ total_pages: Number(e.target.value) })}
-            className="w-full glass-input px-3 py-2 rounded-xl text-sm"
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
+type BookRecord = BookListItem & { categoryType?: string; onList?: boolean };
 
-const BookCardDetails: React.FC<CardDetailsProps> = ({ item, onUpdateProgress }) => {
-  const book = item as Book;
-  return (
-    <div className="space-y-1 text-xs text-slate-400">
-      {book.author && (
-        <p className="mb-1">
-          Author: <strong className="text-slate-200">{book.author}</strong>
-        </p>
-      )}
-      <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800 flex items-center justify-between">
-        <span>
-          Progress: <strong className="text-slate-200">{book.pages_read || 0}</strong> / {book.total_pages || '?'} pgs
-        </span>
-        {onUpdateProgress && (
-          <button
-            onClick={() => onUpdateProgress(item, 10)}
-            className="px-2 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600 text-emerald-200 text-[11px] font-bold transition-all flex items-center space-x-1"
-            title="Increment read (+10 pgs)"
-          >
-            <Plus className="w-3 h-3" />
-            <span>+10pgs</span>
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
+function withBookMeta(item: Book | BookListItem, onList: boolean): BookRecord {
+  return {
+    rating: 0,
+    notes: '',
+    status: 'plan_to_read',
+    ...item,
+    categoryType: 'books',
+    onList,
+  };
+}
 
-export const booksModule: CategoryModule<Book> = {
+const BookFormFields: React.FC<FormFieldsProps> = () => null;
+
+const BookCardDetails: React.FC<CardDetailsProps> = () => null;
+
+export const booksModule: CategoryModule<BookRecord> = {
   id: 'books',
   displayName: 'Books',
   singularName: 'Book',
@@ -94,31 +44,64 @@ export const booksModule: CategoryModule<Book> = {
     { value: 'dropped', label: 'Dropped' },
     { value: 'on_hold', label: 'On Hold' },
   ],
-  defaultStatus: 'reading',
+  defaultStatus: 'plan_to_read',
   api: {
     getAll: async () => {
-      const data = await booksApi.getAll();
-      return data.map((b) => ({ ...b, categoryType: 'books' }));
+      const data = await booksApi.getList();
+      return data.map((b) => withBookMeta(b, true));
     },
-    getById: booksApi.getById,
-    create: booksApi.create,
-    update: booksApi.update,
-    delete: booksApi.delete,
+    getById: async (id) => {
+      try {
+        return withBookMeta(await booksApi.getListItem(id), true);
+      } catch (err) {
+        if (!isNotFoundError(err)) throw err;
+        return withBookMeta(await booksApi.getById(id), false);
+      }
+    },
+    create: async (data) => {
+      const catalog = await booksApi.create({
+        title: data.title ?? '',
+      });
+      const listItem = await booksApi.addToList({
+        id: catalog.id,
+        status: data.status,
+        rating: data.rating,
+        notes: data.notes,
+      });
+      return withBookMeta(listItem, true);
+    },
+    update: async (id, data) => {
+      await booksApi.update(id, {
+        title: data.title,
+      });
+      try {
+        return withBookMeta(
+          await booksApi.updateList(id, {
+            status: data.status,
+            rating: data.rating,
+            notes: data.notes,
+          }),
+          true,
+        );
+      } catch (err) {
+        if (!isNotFoundError(err)) throw err;
+        return withBookMeta(
+          await booksApi.addToList({
+            id,
+            status: data.status,
+            rating: data.rating,
+            notes: data.notes,
+          }),
+          true,
+        );
+      }
+    },
+    delete: async (id) => {
+      await booksApi.removeFromList(id);
+    },
   },
-  getDefaultFormState: () => ({
-    author: '',
-    pages_read: 0,
-    total_pages: 300,
-  }),
+  getDefaultFormState: () => ({}),
   FormFields: BookFormFields,
   CardDetails: BookCardDetails,
-  updateProgress: async (item, increment, api) => {
-    const bk = item as Book;
-    const newPgs = (bk.pages_read || 0) + increment;
-    await api.update(bk.id, { pages_read: newPgs });
-  },
-  getStatsSummary: (stats) => ({
-    total: stats?.books?.total || 0,
-    avgRating: stats?.books?.avg_rating || 0,
-  }),
+  getStatsSummary: (stats) => statsForCategory(stats, 'books'),
 };

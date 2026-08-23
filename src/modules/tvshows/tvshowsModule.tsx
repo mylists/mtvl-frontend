@@ -1,8 +1,23 @@
 import React from 'react';
 import { Plus, Tv } from 'lucide-react';
-import { tvshowsApi } from '../../api/client';
-import { TVShow } from '../../types';
-import { CardDetailsProps, CategoryModule, FormFieldsProps } from '../types';
+import { isNotFoundError, tvshowsApi } from '../../api/client';
+import { TVShow, TVShowListItem } from '../../types';
+import { CardDetailsProps, CategoryModule, FormFieldsProps, statsForCategory } from '../types';
+
+type TVShowRecord = TVShowListItem & { categoryType?: string; onList?: boolean };
+
+function withTVMeta(item: TVShow | TVShowListItem, onList: boolean): TVShowRecord {
+  return {
+    rating: 0,
+    notes: '',
+    status: 'watching',
+    current_season: 1,
+    current_episode: 0,
+    ...item,
+    categoryType: 'tvshows',
+    onList,
+  };
+}
 
 const TVShowFormFields: React.FC<FormFieldsProps> = ({ formData, onChange }) => {
   return (
@@ -42,7 +57,7 @@ const TVShowFormFields: React.FC<FormFieldsProps> = ({ formData, onChange }) => 
 };
 
 const TVShowCardDetails: React.FC<CardDetailsProps> = ({ item, onUpdateProgress }) => {
-  const tv = item as TVShow;
+  const tv = item as TVShowListItem;
   return (
     <div className="flex items-center justify-between bg-slate-900/60 p-2 rounded-xl border border-slate-800 text-xs text-slate-400">
       <span>
@@ -64,7 +79,7 @@ const TVShowCardDetails: React.FC<CardDetailsProps> = ({ item, onUpdateProgress 
   );
 };
 
-export const tvshowsModule: CategoryModule<TVShow> = {
+export const tvshowsModule: CategoryModule<TVShowRecord> = {
   id: 'tvshows',
   displayName: 'TV Shows',
   singularName: 'TV Show',
@@ -90,13 +105,66 @@ export const tvshowsModule: CategoryModule<TVShow> = {
   defaultStatus: 'watching',
   api: {
     getAll: async () => {
-      const data = await tvshowsApi.getAll();
-      return data.map((t) => ({ ...t, categoryType: 'tvshows' }));
+      const data = await tvshowsApi.getList();
+      return data.map((t) => withTVMeta(t, true));
     },
-    getById: tvshowsApi.getById,
-    create: tvshowsApi.create,
-    update: tvshowsApi.update,
-    delete: tvshowsApi.delete,
+    getById: async (id) => {
+      try {
+        return withTVMeta(await tvshowsApi.getListItem(id), true);
+      } catch (err) {
+        if (!isNotFoundError(err)) throw err;
+        return withTVMeta(await tvshowsApi.getById(id), false);
+      }
+    },
+    create: async (data) => {
+      const catalog = await tvshowsApi.create({
+        title: data.title ?? '',
+        total_episodes: data.total_episodes,
+      });
+      const listItem = await tvshowsApi.addToList({
+        id: catalog.id,
+        current_season: data.current_season,
+        current_episode: data.current_episode,
+        status: data.status,
+        rating: data.rating,
+        notes: data.notes,
+      });
+      return withTVMeta(listItem, true);
+    },
+    update: async (id, data) => {
+      await tvshowsApi.update(id, {
+        title: data.title,
+        total_episodes: data.total_episodes,
+      });
+      try {
+        return withTVMeta(
+          await tvshowsApi.updateList(id, {
+            current_season: data.current_season,
+            current_episode: data.current_episode,
+            status: data.status,
+            rating: data.rating,
+            notes: data.notes,
+          }),
+          true,
+        );
+      } catch (err) {
+        if (!isNotFoundError(err)) throw err;
+        return withTVMeta(
+          await tvshowsApi.addToList({
+            id,
+            current_season: data.current_season,
+            current_episode: data.current_episode,
+            status: data.status,
+            rating: data.rating,
+            notes: data.notes,
+          }),
+          true,
+        );
+      }
+    },
+    delete: async (id) => {
+      await tvshowsApi.removeFromList(id);
+    },
   },
   getDefaultFormState: () => ({
     current_season: 1,
@@ -106,12 +174,11 @@ export const tvshowsModule: CategoryModule<TVShow> = {
   FormFields: TVShowFormFields,
   CardDetails: TVShowCardDetails,
   updateProgress: async (item, increment, api) => {
-    const tv = item as TVShow;
-    const newEp = (tv.current_episode || 0) + increment;
-    await api.update(tv.id, { current_episode: newEp });
+    const tv = item as TVShowRecord;
+    await api.update(tv.id, {
+      ...tv,
+      current_episode: (tv.current_episode || 0) + increment,
+    });
   },
-  getStatsSummary: (stats) => ({
-    total: stats?.tv_shows?.total || 0,
-    avgRating: stats?.tv_shows?.avg_rating || 0,
-  }),
+  getStatsSummary: (stats) => statsForCategory(stats, 'tv_shows'),
 };

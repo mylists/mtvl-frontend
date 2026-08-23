@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Download, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
-import { servicesApi } from '../api/client';
+import { AlertCircle, CheckCircle2, Download, Upload, X } from 'lucide-react';
+import { servicesApi, toImportPayload } from '../api/client';
 
 interface ImportExportModalProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
   onClose,
   onRefreshData,
 }) => {
-  const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
+  const [overwrite, setOverwrite] = useState(false);
   const [jsonText, setJsonText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -48,15 +48,12 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
     try {
       setIsProcessing(true);
       const parsed = JSON.parse(jsonText.trim());
-
-      await servicesApi.importData({
-        mode: importMode,
-        movies: parsed.movies || [],
-        tv_shows: parsed.tv_shows || [],
-        books: parsed.books || [],
+      const result = await servicesApi.importData(toImportPayload(parsed, overwrite));
+      const imported = result.imported;
+      setMessage({
+        type: 'success',
+        text: `Imported ${imported.movies} movies, ${imported.tv_shows} TV shows, ${imported.books} books.`,
       });
-
-      setMessage({ type: 'success', text: `Import complete (${importMode} mode)!` });
       onRefreshData();
     } catch (err: any) {
       setMessage({
@@ -92,7 +89,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
 
         <h2 className="text-xl font-extrabold text-white mb-1">Import & Export Library</h2>
         <p className="text-xs text-slate-400 mb-6">
-          Backup your media collection to JSON or restore existing data into MTVL.
+          Backup the shared catalog and your personal lists, or restore items onto your list.
         </p>
 
         {message && (
@@ -113,14 +110,13 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
         )}
 
         <div className="space-y-6">
-          {/* Export Section */}
           <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
             <h3 className="text-sm font-bold text-white mb-1 flex items-center space-x-2">
               <Download className="w-4 h-4 text-indigo-400" />
-              <span>Export Entire Collection</span>
+              <span>Export Catalog & Lists</span>
             </h3>
             <p className="text-xs text-slate-400 mb-3">
-              Download all your movies, TV shows, and books as a single portable `.json` file.
+              Download the shared catalog plus your list links as a portable `.json` file.
             </p>
             <button
               onClick={handleExport}
@@ -131,40 +127,37 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
             </button>
           </div>
 
-          {/* Import Section */}
           <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
             <h3 className="text-sm font-bold text-white flex items-center space-x-2">
               <Upload className="w-4 h-4 text-purple-400" />
               <span>Import Collection</span>
             </h3>
 
-            {/* Mode selection */}
             <div className="flex items-center space-x-4">
               <label className="flex items-center space-x-2 cursor-pointer text-xs font-medium text-slate-300">
                 <input
                   type="radio"
                   name="mode"
                   value="merge"
-                  checked={importMode === 'merge'}
-                  onChange={() => setImportMode('merge')}
+                  checked={!overwrite}
+                  onChange={() => setOverwrite(false)}
                   className="accent-indigo-500"
                 />
-                <span>Merge (Append items)</span>
+                <span>Merge (Keep existing list)</span>
               </label>
               <label className="flex items-center space-x-2 cursor-pointer text-xs font-medium text-rose-300">
                 <input
                   type="radio"
                   name="mode"
                   value="replace"
-                  checked={importMode === 'replace'}
-                  onChange={() => setImportMode('replace')}
+                  checked={overwrite}
+                  onChange={() => setOverwrite(true)}
                   className="accent-rose-500"
                 />
-                <span>Replace (Overwrite list)</span>
+                <span>Overwrite (Replace your list)</span>
               </label>
             </div>
 
-            {/* File upload or paste text */}
             <div>
               <input
                 type="file"

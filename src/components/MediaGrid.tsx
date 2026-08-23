@@ -11,7 +11,7 @@ interface MediaGridProps {
   categoryType: string;
   items: MediaItem[];
   isLoading: boolean;
-  onDeleteItem: (id: number) => void;
+  onDeleteItem: (id: string) => void;
   onUpdateProgress?: (item: MediaItem, increment: number) => void;
 }
 
@@ -51,8 +51,10 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
     })
     .sort((a, b) => {
       if (sortBy === 'title') return a.title.localeCompare(b.title);
-      if (sortBy === 'rating') return b.rating - a.rating;
-      return b.id - a.id;
+      if (sortBy === 'rating') return (b.rating ?? 0) - (a.rating ?? 0);
+      const aTime = a.updated_at || a.created_at || a.id;
+      const bTime = b.updated_at || b.created_at || b.id;
+      return String(bTime).localeCompare(String(aTime));
     });
 
   return (
@@ -65,7 +67,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
           <div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight">{module.displayName}</h1>
             <p className="text-xs text-slate-400">
-              Showing {filteredItems.length} of {items.length} logged items
+              Showing {filteredItems.length} of {items.length} items on your list
             </p>
           </div>
         </div>
