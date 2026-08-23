@@ -6,7 +6,7 @@ IMAGE = $(file < TAG)
 VERSION = $(file < VERSION)
 TAG = $(IMAGE):$(VERSION)
 
-.PHONY: help install dev build lint preview clean image-build upload
+.PHONY: help install dev build lint preview clean sync-version image-build upload
 
 # Default target
 .DEFAULT_GOAL := help
@@ -34,16 +34,21 @@ preview: ## Preview the production build locally
 clean: ## Remove build artifacts and node_modules
 	rm -rf dist node_modules
 
-image-build:
+sync-version: ## Copy VERSION into package.json
+	npm pkg set version=$(VERSION)
+
+image-build: sync-version ## Build the Docker image
 	$(DOCKER) buildx build \
 		--file docker/Dockerfile \
+		--build-arg VITE_API_BASE_URL=$(VITE_API_BASE_URL) \
 		--tag $(REGISTRY)/$(IMAGE):$(VERSION) \
 		--tag $(REGISTRY)/$(IMAGE):latest \
 		--target deploy .
 
-upload:
+upload: sync-version ## Upload the Docker image to the registry
 	$(DOCKER) buildx build \
 		--file docker/Dockerfile \
+		--build-arg VITE_API_BASE_URL=$(VITE_API_BASE_URL) \
 		--push \
 		--platform linux/amd64,linux/arm64 \
 		--tag $(REGISTRY)/$(IMAGE):$(VERSION) \
