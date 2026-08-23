@@ -18,7 +18,12 @@ RUN npm run build
 
 FROM nginx:1.27-alpine AS deploy
 
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 COPY docker/files/nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker/files/40-api-base-url.sh /docker-entrypoint.d/40-api-base-url.sh
+RUN chmod +x /docker-entrypoint.d/40-api-base-url.sh
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80

@@ -13,7 +13,15 @@ import {
   User,
 } from '../types';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '');
+function resolveApiBaseUrl(): string {
+  const runtime = typeof window !== 'undefined' ? window.__API_BASE_URL__?.trim() : undefined;
+  if (runtime) {
+    return runtime.replace(/\/$/, '');
+  }
+  return (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '');
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
