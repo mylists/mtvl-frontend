@@ -1,22 +1,52 @@
 import React, { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Search, X, Film, Tv, BookOpen, Star, Loader2 } from 'lucide-react';
 import { servicesApi } from '../api/client';
+import { itemPath } from '../lib/paths';
 import { Book, Movie, SearchResults, TVShow } from '../types';
 
 interface GlobalSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectResult: (category: string) => void;
 }
 
 export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   isOpen,
   onClose,
-  onSelectResult,
 }) => {
-  const [query, setQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get('q') ?? '');
   const [results, setResults] = useState<SearchResults | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setQuery(searchParams.get('q') ?? '');
+    }
+  }, [isOpen, searchParams]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  const updateQuery = (value: string) => {
+    setQuery(value);
+    const next = new URLSearchParams(searchParams);
+    if (value.trim()) {
+      next.set('q', value);
+    } else {
+      next.delete('q');
+    }
+    setSearchParams(next, { replace: true });
+  };
 
   useEffect(() => {
     if (!query.trim()) {
@@ -47,10 +77,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
     (results?.tv_shows?.length || 0) +
     (results?.books?.length || 0);
 
+  const resultLinkClass =
+    'glass-card p-3 rounded-xl flex items-center justify-between border border-slate-800';
+
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
       <div className="w-full max-w-2xl glass-panel rounded-3xl p-6 border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh]">
-        {/* Search Input Bar */}
         <div className="relative mb-4">
           <Search className="w-5 h-5 absolute left-4 top-3.5 text-indigo-400" />
           <input
@@ -58,12 +90,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
             autoFocus
             placeholder="Search across all categories (title, director, author, notes)..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => updateQuery(e.target.value)}
             className="w-full glass-input pl-12 pr-10 py-3 rounded-2xl text-base placeholder-slate-500"
           />
           {query ? (
             <button
-              onClick={() => setQuery('')}
+              onClick={() => updateQuery('')}
               className="absolute right-3.5 top-3.5 p-1 rounded-lg text-slate-400 hover:text-white"
             >
               <X className="w-4 h-4" />
@@ -78,7 +110,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           )}
         </div>
 
-        {/* Status / Spinner */}
         {isSearching && (
           <div className="flex items-center justify-center py-8 text-slate-400 space-x-2">
             <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
@@ -86,14 +117,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           </div>
         )}
 
-        {/* Results List */}
         {!isSearching && results && (
           <div className="overflow-y-auto space-y-6 pr-1 flex-1">
             <p className="text-xs text-slate-400 font-medium">
               Found {totalResults} result{totalResults !== 1 ? 's' : ''} for "{query}"
             </p>
 
-            {/* Movies Results */}
             {results.movies?.length > 0 && (
               <div>
                 <div className="flex items-center space-x-2 text-xs font-bold uppercase text-slate-400 mb-2">
@@ -102,13 +131,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                 </div>
                 <div className="space-y-2">
                   {results.movies.map((m: Movie) => (
-                    <div
+                    <Link
                       key={m.id}
-                      onClick={() => {
-                        onSelectResult('movies');
-                        onClose();
-                      }}
-                      className="cursor-pointer glass-card p-3 rounded-xl flex items-center justify-between hover:bg-indigo-600/10 border border-slate-800"
+                      to={itemPath('movies', m.id)}
+                      className={`${resultLinkClass} hover:bg-indigo-600/10`}
                     >
                       <div>
                         <p className="font-bold text-white text-sm">{m.title}</p>
@@ -121,13 +147,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                         <Star className="w-3.5 h-3.5 fill-amber-400" />
                         <span>{m.rating}</span>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* TV Shows Results */}
             {results.tv_shows?.length > 0 && (
               <div>
                 <div className="flex items-center space-x-2 text-xs font-bold uppercase text-slate-400 mb-2">
@@ -136,13 +161,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                 </div>
                 <div className="space-y-2">
                   {results.tv_shows.map((t: TVShow) => (
-                    <div
+                    <Link
                       key={t.id}
-                      onClick={() => {
-                        onSelectResult('tvshows');
-                        onClose();
-                      }}
-                      className="cursor-pointer glass-card p-3 rounded-xl flex items-center justify-between hover:bg-purple-600/10 border border-slate-800"
+                      to={itemPath('tvshows', t.id)}
+                      className={`${resultLinkClass} hover:bg-purple-600/10`}
                     >
                       <div>
                         <p className="font-bold text-white text-sm">{t.title}</p>
@@ -154,13 +176,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                         <Star className="w-3.5 h-3.5 fill-amber-400" />
                         <span>{t.rating}</span>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Books Results */}
             {results.books?.length > 0 && (
               <div>
                 <div className="flex items-center space-x-2 text-xs font-bold uppercase text-slate-400 mb-2">
@@ -169,13 +190,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                 </div>
                 <div className="space-y-2">
                   {results.books.map((b: Book) => (
-                    <div
+                    <Link
                       key={b.id}
-                      onClick={() => {
-                        onSelectResult('books');
-                        onClose();
-                      }}
-                      className="cursor-pointer glass-card p-3 rounded-xl flex items-center justify-between hover:bg-emerald-600/10 border border-slate-800"
+                      to={itemPath('books', b.id)}
+                      className={`${resultLinkClass} hover:bg-emerald-600/10`}
                     >
                       <div>
                         <p className="font-bold text-white text-sm">{b.title}</p>
@@ -185,7 +203,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                         <Star className="w-3.5 h-3.5 fill-amber-400" />
                         <span>{b.rating}</span>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>

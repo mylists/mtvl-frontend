@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Star, X } from 'lucide-react';
+import { Copy, Link2, Save, Star, X } from 'lucide-react';
+import { itemShareUrl } from '../lib/paths';
 import { getCategoryModule } from '../modules';
 import { MediaItem, MediaStatus } from '../types';
 
@@ -29,6 +30,7 @@ export const MediaModal: React.FC<MediaModalProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -45,9 +47,33 @@ export const MediaModal: React.FC<MediaModalProps> = ({
       setCustomFormData(module.getDefaultFormState());
     }
     setError(null);
+    setCopied(false);
   }, [initialData, isOpen, categoryType]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
+
+  const copyShareLink = async () => {
+    if (!initialData?.id) return;
+    try {
+      await navigator.clipboard.writeText(itemShareUrl(categoryType, initialData.id));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch (err) {
+      console.error('Failed to copy share link', err);
+    }
+  };
 
   const handleCustomFormChange = (updates: Partial<Record<string, any>>) => {
     setCustomFormData((prev) => ({ ...prev, ...updates }));
@@ -96,9 +122,22 @@ export const MediaModal: React.FC<MediaModalProps> = ({
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-xl font-extrabold text-white mb-1">
-          {initialData ? 'Edit' : 'Add New'} {module.singularName}
-        </h2>
+        <div className="flex items-start justify-between gap-3 pr-10 mb-1">
+          <h2 className="text-xl font-extrabold text-white">
+            {initialData ? 'Edit' : 'Add New'} {module.singularName}
+          </h2>
+          {initialData?.id && (
+            <button
+              type="button"
+              onClick={copyShareLink}
+              className="shrink-0 inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+              title="Copy shareable link"
+            >
+              {copied ? <Copy className="w-3.5 h-3.5 text-emerald-400" /> : <Link2 className="w-3.5 h-3.5" />}
+              <span>{copied ? 'Copied' : 'Copy link'}</span>
+            </button>
+          )}
+        </div>
         <p className="text-xs text-slate-400 mb-5">Fill in the details below to update your tracking list.</p>
 
         {error && (

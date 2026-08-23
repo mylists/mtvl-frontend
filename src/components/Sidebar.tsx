@@ -1,14 +1,14 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { BarChart3, LayoutDashboard, Sparkles } from 'lucide-react';
 import { useCategory } from '../context/CategoryContext';
+import { isCategoryActive } from '../lib/paths';
 import { getCategoryModule } from '../modules';
 
-interface SidebarProps {
-  isOpen?: boolean;
-}
-
-export const Sidebar: React.FC<SidebarProps> = () => {
-  const { categories, activeCategory, setActiveCategory, stats } = useCategory();
+export const Sidebar: React.FC = () => {
+  const { categories, stats } = useCategory();
+  const { pathname } = useLocation();
+  const dashboardActive = pathname === '/' || pathname === '/dashboard';
 
   const getCategoryCount = (categoryName: string) => {
     if (!stats) return null;
@@ -23,15 +23,14 @@ export const Sidebar: React.FC<SidebarProps> = () => {
   return (
     <aside className="w-64 glass-panel border-r border-slate-800/80 min-h-[calc(100vh-65px)] p-4 flex flex-col justify-between hidden md:flex">
       <div className="space-y-6">
-        {/* Main Nav Section */}
         <div>
           <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-3 mb-2">
             Overview
           </h3>
-          <button
-            onClick={() => setActiveCategory('dashboard')}
+          <Link
+            to="/"
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
-              activeCategory === 'dashboard'
+              dashboardActive
                 ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-inner'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
@@ -41,10 +40,9 @@ export const Sidebar: React.FC<SidebarProps> = () => {
               <span>Dashboard</span>
             </div>
             <BarChart3 className="w-3.5 h-3.5 opacity-60" />
-          </button>
+          </Link>
         </div>
 
-        {/* Dynamic Categories Section */}
         <div>
           <div className="flex items-center justify-between px-3 mb-2">
             <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -59,13 +57,13 @@ export const Sidebar: React.FC<SidebarProps> = () => {
             {categories.map((cat) => {
               const mod = getCategoryModule(cat.category, cat);
               const CategoryIcon = mod.icon;
-              const isActive = activeCategory === cat.category;
+              const isActive = isCategoryActive(pathname, cat.category);
               const count = getCategoryCount(cat.category);
 
               return (
-                <button
+                <Link
                   key={cat.category}
-                  onClick={() => setActiveCategory(cat.category)}
+                  to={`/${mod.id}`}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-all ${
                     isActive
                       ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 shadow-inner'
@@ -83,14 +81,13 @@ export const Sidebar: React.FC<SidebarProps> = () => {
                       {count}
                     </span>
                   )}
-                </button>
+                </Link>
               );
             })}
           </div>
         </div>
       </div>
 
-      {/* Footer Info Box */}
       <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-purple-950/20 to-slate-900 border border-indigo-500/15">
         <div className="flex items-center space-x-2 mb-1.5">
           <Sparkles className="w-4 h-4 text-indigo-400" />

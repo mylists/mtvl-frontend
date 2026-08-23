@@ -1,24 +1,39 @@
-import React from 'react';
-import { CheckCircle, Clock, Edit3, Eye, Star, Trash2, XCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { CheckCircle, Clock, Copy, Edit3, Eye, Link2, Star, Trash2, XCircle } from 'lucide-react';
+import { itemPath, itemShareUrl } from '../lib/paths';
 import { getCategoryModule } from '../modules';
 import { MediaItem, MediaStatus } from '../types';
 
 interface MediaCardProps {
   item: MediaItem;
-  onEdit: (item: MediaItem) => void;
   onDelete: (id: number) => void;
   onUpdateProgress?: (item: MediaItem, increment: number) => void;
 }
 
 export const MediaCard: React.FC<MediaCardProps> = ({
   item,
-  onEdit,
   onDelete,
   onUpdateProgress,
 }) => {
   const module = getCategoryModule(item.categoryType);
   const CategoryIcon = module.icon;
   const CardDetails = module.CardDetails;
+  const location = useLocation();
+  const href = { pathname: itemPath(item.categoryType, item.id), search: location.search };
+  const [copied, setCopied] = useState(false);
+
+  const copyShareLink = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(itemShareUrl(item.categoryType, item.id));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch (err) {
+      console.error('Failed to copy share link', err);
+    }
+  };
 
   const getStatusBadge = (status: MediaStatus) => {
     const isBook = module.id === 'books';
@@ -79,7 +94,6 @@ export const MediaCard: React.FC<MediaCardProps> = ({
 
   return (
     <div className={`glass-card rounded-2xl p-5 flex flex-col justify-between group relative overflow-hidden ${module.color.borderHover} transition-all`}>
-      {/* Top Header Row */}
       <div>
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1">
@@ -92,14 +106,15 @@ export const MediaCard: React.FC<MediaCardProps> = ({
               </span>
             </div>
             <h3 className="font-extrabold text-white text-base leading-snug line-clamp-2 group-hover:text-indigo-300 transition-colors">
-              {item.title}
+              <Link to={href} className="hover:underline decoration-indigo-400/60 underline-offset-2">
+                {item.title}
+              </Link>
             </h3>
           </div>
 
           {getStatusBadge(item.status)}
         </div>
 
-        {/* Plugged-in Module Specific Card Details */}
         <div className="mb-4">
           <CardDetails item={item} onUpdateProgress={onUpdateProgress} />
 
@@ -111,18 +126,24 @@ export const MediaCard: React.FC<MediaCardProps> = ({
         </div>
       </div>
 
-      {/* Footer Rating & Actions */}
       <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
         <div>{renderStars(item.rating)}</div>
 
         <div className="flex items-center space-x-1 opacity-90 group-hover:opacity-100 transition-opacity">
           <button
-            onClick={() => onEdit(item)}
+            onClick={copyShareLink}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            title={copied ? 'Link copied' : 'Copy shareable link'}
+          >
+            {copied ? <Copy className="w-4 h-4 text-emerald-400" /> : <Link2 className="w-4 h-4" />}
+          </button>
+          <Link
+            to={href}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             title="Edit item"
           >
             <Edit3 className="w-4 h-4" />
-          </button>
+          </Link>
           <button
             onClick={() => onDelete(item.id)}
             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"

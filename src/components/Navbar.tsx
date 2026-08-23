@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Search,
   LogOut,
@@ -13,14 +14,12 @@ import { useAuth } from '../context/AuthContext';
 import { useCategory } from '../context/CategoryContext';
 
 interface NavbarProps {
-  onOpenSearch: () => void;
   onOpenImportExport: () => void;
   onOpenAuth: () => void;
   onOpenProfile: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  onOpenSearch,
   onOpenImportExport,
   onOpenAuth,
   onOpenProfile,
@@ -32,7 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-30 glass-panel border-b border-slate-800/80 px-4 lg:px-8 py-3.5 flex items-center justify-between">
       {/* Brand Logo & Title */}
-      <div className="flex items-center space-x-3">
+      <Link to="/" className="flex items-center space-x-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 p-0.5 shadow-lg shadow-indigo-500/20">
           <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
             <Film className="w-5 h-5 text-indigo-400" />
@@ -49,12 +48,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <p className="text-xs text-slate-400 hidden sm:block">Tracking List</p>
         </div>
-      </div>
+      </Link>
 
       {/* Center Search Trigger */}
       <div className="flex-1 max-w-md mx-4 sm:mx-8">
-        <button
-          onClick={onOpenSearch}
+        <Link
+          to="/search"
           className="w-full flex items-center justify-between glass-input px-4 py-2 rounded-xl text-slate-400 text-sm hover:border-indigo-500/50 transition-all group"
         >
           <div className="flex items-center space-x-2">
@@ -64,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-900 border border-slate-700 rounded-md">
             ⌘K
           </kbd>
-        </button>
+        </Link>
       </div>
 
       {/* Right Actions */}

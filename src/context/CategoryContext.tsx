@@ -5,12 +5,12 @@ import { useAuth } from './AuthContext';
 
 interface CategoryContextType {
   categories: CategoryInfo[];
-  activeCategory: string; // 'dashboard', 'movies', 'tvshows', 'books', or custom
-  setActiveCategory: (cat: string) => void;
   isLoading: boolean;
   refreshCategories: () => Promise<void>;
   stats: StatsOverview | null;
   refreshStats: () => Promise<void>;
+  refreshLibrary: () => void;
+  libraryRevision: number;
   backendConnected: boolean;
 }
 
@@ -19,9 +19,9 @@ const CategoryContext = createContext<CategoryContextType | undefined>(undefined
 export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>('dashboard');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [stats, setStats] = useState<StatsOverview | null>(null);
+  const [libraryRevision, setLibraryRevision] = useState(0);
   const [backendConnected, setBackendConnected] = useState<boolean>(true);
 
   const fetchCategories = async () => {
@@ -74,12 +74,12 @@ export const CategoryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     <CategoryContext.Provider
       value={{
         categories,
-        activeCategory,
-        setActiveCategory,
         isLoading,
         refreshCategories: fetchCategories,
         stats,
         refreshStats: fetchStats,
+        refreshLibrary: () => setLibraryRevision((n) => n + 1),
+        libraryRevision,
         backendConnected,
       }}
     >

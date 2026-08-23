@@ -1,16 +1,17 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Activity, ArrowRight, Film, Star, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCategory } from '../context/CategoryContext';
+import { categoryPath, newItemPath } from '../lib/paths';
 import { getAllCategoryModules, getCategoryModule } from '../modules';
 
 interface StatsDashboardProps {
-  onAddMedia: (category: string) => void;
   onOpenAuth: () => void;
 }
 
-export const StatsDashboard: React.FC<StatsDashboardProps> = ({ onAddMedia, onOpenAuth }) => {
-  const { stats, categories, setActiveCategory } = useCategory();
+export const StatsDashboard: React.FC<StatsDashboardProps> = ({ onOpenAuth }) => {
+  const { stats, categories } = useCategory();
   const { isAuthenticated } = useAuth();
 
   const registeredModules = getAllCategoryModules();
@@ -62,14 +63,14 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ onAddMedia, onOp
             {registeredModules.map((mod) => {
               const Icon = mod.icon;
               return (
-                <button
+                <Link
                   key={mod.id}
-                  onClick={() => onAddMedia(mod.id)}
+                  to={newItemPath(mod.id)}
                   className={`px-4 py-2.5 rounded-xl ${mod.color.button} text-white text-xs font-bold transition-all flex items-center space-x-2`}
                 >
                   <Icon className="w-4 h-4" />
                   <span>Add {mod.singularName}</span>
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -107,13 +108,13 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ onAddMedia, onOp
                 </div>
               </div>
 
-              <button
-                onClick={() => setActiveCategory(mod.id)}
+              <Link
+                to={categoryPath(mod.id)}
                 className={`mt-5 w-full py-2 rounded-xl glass-card text-xs font-semibold ${mod.color.accentText} hover:text-white flex items-center justify-center space-x-1 transition-all`}
               >
                 <span>View {mod.displayName}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              </Link>
             </div>
           );
         })}
@@ -133,10 +134,10 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ onAddMedia, onOp
           {categories.map((cat) => {
             const mod = getCategoryModule(cat.category, cat);
             return (
-              <div
+              <Link
                 key={cat.category}
-                onClick={() => setActiveCategory(cat.category)}
-                className="cursor-pointer p-4 rounded-xl glass-card border border-slate-800/80 hover:border-indigo-500/40 transition-all flex items-start justify-between"
+                to={categoryPath(cat.category)}
+                className="p-4 rounded-xl glass-card border border-slate-800/80 hover:border-indigo-500/40 transition-all flex items-start justify-between"
               >
                 <div>
                   <h4 className="font-bold text-white text-sm mb-1">{mod.displayName}</h4>
@@ -146,7 +147,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ onAddMedia, onOp
                   </span>
                 </div>
                 <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-400" />
-              </div>
+              </Link>
             );
           })}
         </div>
