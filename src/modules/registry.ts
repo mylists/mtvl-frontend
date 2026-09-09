@@ -65,6 +65,18 @@ export function createGenericCategoryModule(category: string, info?: Partial<Cat
     ],
     defaultStatus: 'watching',
     api: {
+      getCatalog: async () => {
+        const res = await apiClient.get(endpoint);
+        return unwrapItems<MediaItem>(res.data).map((item) => ({
+          ...item,
+          categoryType: category,
+          onList: false,
+        }));
+      },
+      getCatalogById: async (id: string) => {
+        const res = await apiClient.get<MediaItem>(`${endpoint}/${id}`);
+        return { ...res.data, categoryType: category, onList: false };
+      },
       getAll: async () => {
         const res = await apiClient.get(`${endpoint}/list`);
         return unwrapItems<MediaItem>(res.data).map((item) => ({

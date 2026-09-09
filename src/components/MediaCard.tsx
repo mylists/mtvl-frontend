@@ -7,12 +7,14 @@ import { MediaItem, MediaStatus } from '../types';
 
 interface MediaCardProps {
   item: MediaItem;
+  readOnly?: boolean;
   onDelete: (id: string) => void;
   onUpdateProgress?: (item: MediaItem, increment: number) => void;
 }
 
 export const MediaCard: React.FC<MediaCardProps> = ({
   item,
+  readOnly = false,
   onDelete,
   onUpdateProgress,
 }) => {
@@ -112,7 +114,9 @@ export const MediaCard: React.FC<MediaCardProps> = ({
             </h3>
           </div>
 
-          {getStatusBadge(item.status)}
+          {readOnly ? (
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Catalog</span>
+          ) : getStatusBadge(item.status)}
         </div>
 
         <div className="mb-4">
@@ -127,7 +131,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
       </div>
 
       <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
-        <div>{renderStars(item.rating)}</div>
+        <div>{!readOnly && renderStars(item.rating)}</div>
 
         <div className="flex items-center space-x-1 opacity-90 group-hover:opacity-100 transition-opacity">
           <button
@@ -137,20 +141,20 @@ export const MediaCard: React.FC<MediaCardProps> = ({
           >
             {copied ? <Copy className="w-4 h-4 text-emerald-400" /> : <Link2 className="w-4 h-4" />}
           </button>
-          <Link
+          {!readOnly && <Link
             to={href}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             title="Edit item"
           >
             <Edit3 className="w-4 h-4" />
-          </Link>
-          <button
+          </Link>}
+          {!readOnly && <button
             onClick={() => onDelete(item.id)}
             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
             title="Remove from list"
           >
             <Trash2 className="w-4 h-4" />
-          </button>
+          </button>}
         </div>
       </div>
     </div>

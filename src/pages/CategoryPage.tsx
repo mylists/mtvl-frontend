@@ -32,14 +32,15 @@ export const CategoryPage: React.FC = () => {
   };
 
   const loadCategoryItems = useCallback(async () => {
-    if (!isAuthenticated || !activeCategory) {
+    if (!activeCategory) {
       setItems([]);
       return;
     }
 
     setIsLoadingItems(true);
     try {
-      const data = await getCategoryModule(activeCategory).api.getAll();
+      const categoryApi = getCategoryModule(activeCategory, currentCategoryInfo).api;
+      const data = isAuthenticated ? await categoryApi.getAll() : await categoryApi.getCatalog();
       setItems(data);
     } catch (err) {
       console.error('Failed to load category items', err);
@@ -47,7 +48,7 @@ export const CategoryPage: React.FC = () => {
     } finally {
       setIsLoadingItems(false);
     }
-  }, [activeCategory, isAuthenticated]);
+  }, [activeCategory, currentCategoryInfo, isAuthenticated]);
 
   useEffect(() => {
     loadCategoryItems();
@@ -83,15 +84,14 @@ export const CategoryPage: React.FC = () => {
       return;
     }
 
-    if (!isAuthenticated) {
-      setEditingItem(null);
-      return;
-    }
-
     let cancelled = false;
     setIsResolvingItem(true);
-    getCategoryModule(activeCategory)
-      .api.getById(resolvedItemId)
+    const categoryApi = getCategoryModule(activeCategory, currentCategoryInfo).api;
+    const loadItem = isAuthenticated
+      ? categoryApi.getById(resolvedItemId)
+      : categoryApi.getCatalogById(resolvedItemId);
+
+    loadItem
       .then((item) => {
         if (!cancelled) {
           setEditingItem({ ...item, categoryType: item.categoryType || activeCategory });
@@ -107,7 +107,7 @@ export const CategoryPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [activeCategory, isAuthenticated, isNewItem, itemId, items, resolvedItemId]);
+  }, [activeCategory, currentCategoryInfo, isAuthenticated, isNewItem, itemId, items, resolvedItemId]);
 
   const handleSaveMediaItem = async (payload: Partial<MediaItem>) => {
     const cat = payload.categoryType || activeCategory;
@@ -150,18 +150,7 @@ export const CategoryPage: React.FC = () => {
     }
   };
 
-  const isModalOpen = isAuthenticated && (isNewItem || Boolean(resolvedItemId));
-
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
-        <h2 className="text-2xl font-extrabold text-white mb-2">{categoryDisplayName}</h2>
-        <p className="text-slate-400 max-w-md leading-relaxed">
-          Sign in to view this list. After you sign in, this same URL will open the shared page.
-        </p>
-      </div>
-    );
-  }
+  const isModalOpen = (isAuthenticated && isNewItem) || Boolean(resolvedItemId && editingItem);
 
   return (
     <>
@@ -170,6 +159,7 @@ export const CategoryPage: React.FC = () => {
         categoryType={activeCategory}
         items={items}
         isLoading={isLoadingItems || isResolvingItem}
+        isPersonalList={isAuthenticated}
         onDeleteItem={handleDeleteMediaItem}
         onUpdateProgress={handleUpdateProgress}
       />
@@ -180,6 +170,7 @@ export const CategoryPage: React.FC = () => {
         onSave={handleSaveMediaItem}
         categoryType={activeCategory}
         initialData={isNewItem ? null : editingItem}
+        readOnly={!isAuthenticated}
       />
     </>
   );

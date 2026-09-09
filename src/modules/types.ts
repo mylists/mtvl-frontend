@@ -34,6 +34,10 @@ export interface BaseMediaRecord {
 }
 
 export interface CategoryModuleApi<T = MediaItem> {
+  /** Read the shared catalog. This endpoint is public. */
+  getCatalog: () => Promise<T[]>;
+  /** Read one shared catalog item. This endpoint is public. */
+  getCatalogById: (id: string) => Promise<T>;
   getAll: () => Promise<T[]>;
   getById: (id: string) => Promise<T>;
   create: (data: Partial<T>) => Promise<T>;

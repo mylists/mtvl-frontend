@@ -8,7 +8,8 @@ export type MediaStatus =
   | 'on_hold';
 
 export interface User {
-  id: number;
+  /** UUID supplied by the backend. */
+  id: string;
   username: string;
   email: string;
   created_at?: string;
@@ -106,7 +107,7 @@ export type MediaItem = ListItem & {
 };
 
 export interface UserMovieLink {
-  user_id: number;
+  user_id: string;
   movie_id: string;
   status: string;
   rating: number;
@@ -116,7 +117,7 @@ export interface UserMovieLink {
 }
 
 export interface UserTVShowLink {
-  user_id: number;
+  user_id: string;
   tv_show_id: string;
   current_season?: number;
   current_episode?: number;
@@ -128,7 +129,7 @@ export interface UserTVShowLink {
 }
 
 export interface UserBookLink {
-  user_id: number;
+  user_id: string;
   book_id: string;
   status: string;
   rating: number;

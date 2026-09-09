@@ -11,6 +11,7 @@ interface MediaGridProps {
   categoryType: string;
   items: MediaItem[];
   isLoading: boolean;
+  isPersonalList: boolean;
   onDeleteItem: (id: string) => void;
   onUpdateProgress?: (item: MediaItem, increment: number) => void;
 }
@@ -20,6 +21,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
   categoryType,
   items,
   isLoading,
+  isPersonalList,
   onDeleteItem,
   onUpdateProgress,
 }) => {
@@ -46,12 +48,12 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
   const filteredItems = items
     .filter((item) => {
       const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+      const matchesStatus = !isPersonalList || statusFilter === 'all' || item.status === statusFilter;
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
       if (sortBy === 'title') return a.title.localeCompare(b.title);
-      if (sortBy === 'rating') return (b.rating ?? 0) - (a.rating ?? 0);
+      if (isPersonalList && sortBy === 'rating') return (b.rating ?? 0) - (a.rating ?? 0);
       const aTime = a.updated_at || a.created_at || a.id;
       const bTime = b.updated_at || b.created_at || b.id;
       return String(bTime).localeCompare(String(aTime));
@@ -67,18 +69,24 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
           <div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight">{module.displayName}</h1>
             <p className="text-xs text-slate-400">
-              Showing {filteredItems.length} of {items.length} items on your list
+              {isPersonalList
+                ? `Showing ${filteredItems.length} of ${items.length} items on your list`
+                : `Browsing ${filteredItems.length} of ${items.length} public catalog items`}
             </p>
           </div>
         </div>
 
-        <Link
-          to={addHref}
-          className={`px-5 py-2.5 rounded-xl ${module.color.button} text-white font-bold text-sm transition-all flex items-center justify-center space-x-2`}
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add New {module.singularName}</span>
-        </Link>
+        {isPersonalList ? (
+          <Link
+            to={addHref}
+            className={`px-5 py-2.5 rounded-xl ${module.color.button} text-white font-bold text-sm transition-all flex items-center justify-center space-x-2`}
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New {module.singularName}</span>
+          </Link>
+        ) : (
+          <p className="text-xs text-slate-400">Sign in to create records or add them to your list.</p>
+        )}
       </div>
 
       <div className="flex flex-col md:flex-row gap-3 justify-between items-center glass-panel p-4 rounded-2xl border border-slate-800">
@@ -93,7 +101,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
           />
         </div>
 
-        <div className="flex items-center space-x-1 overflow-x-auto w-full md:w-auto py-1">
+        {isPersonalList && <div className="flex items-center space-x-1 overflow-x-auto w-full md:w-auto py-1">
           <button
             onClick={() => updateParam('status', 'all', 'all')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
@@ -120,7 +128,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
               </button>
             );
           })}
-        </div>
+        </div>}
 
         <div className="flex items-center space-x-2 w-full md:w-auto justify-end">
           <ArrowUpDown className="w-4 h-4 text-slate-400" />
@@ -130,7 +138,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
             className="glass-input px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer"
           >
             <option value="id" className="bg-slate-900">Recently Added</option>
-            <option value="rating" className="bg-slate-900">Highest Rated</option>
+            {isPersonalList && <option value="rating" className="bg-slate-900">Highest Rated</option>}
             <option value="title" className="bg-slate-900">Alphabetical (A-Z)</option>
           </select>
         </div>
@@ -151,12 +159,14 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
           <p className="text-xs text-slate-400 max-w-sm mx-auto mb-4">
             No entries match your search or filter criteria. Try clearing filters or add a new record.
           </p>
-          <Link
-            to={addHref}
-            className="inline-flex px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs shadow-md shadow-indigo-600/30"
-          >
-            Add New Item
-          </Link>
+          {isPersonalList && (
+            <Link
+              to={addHref}
+              className="inline-flex px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs shadow-md shadow-indigo-600/30"
+            >
+              Add New Item
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -164,6 +174,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
             <MediaCard
               key={item.id}
               item={item}
+              readOnly={!isPersonalList}
               onDelete={onDeleteItem}
               onUpdateProgress={onUpdateProgress}
             />

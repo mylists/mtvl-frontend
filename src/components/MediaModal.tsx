@@ -10,6 +10,7 @@ interface MediaModalProps {
   onSave: (data: Partial<MediaItem>) => Promise<void>;
   categoryType: string;
   initialData?: MediaItem | null;
+  readOnly?: boolean;
 }
 
 export const MediaModal: React.FC<MediaModalProps> = ({
@@ -18,6 +19,7 @@ export const MediaModal: React.FC<MediaModalProps> = ({
   onSave,
   categoryType,
   initialData,
+  readOnly = false,
 }) => {
   const module = getCategoryModule(categoryType);
   const FormFields = module.FormFields;
@@ -139,7 +141,9 @@ export const MediaModal: React.FC<MediaModalProps> = ({
           )}
         </div>
         <p className="text-xs text-slate-400 mb-5">
-          {initialData && initialData.onList === false
+          {readOnly
+            ? 'This is a public catalog item. Sign in to add it to your personal list.'
+            : initialData && initialData.onList === false
             ? 'This item is in the shared catalog. Save to add it to your list.'
             : 'Fill in the details below to update your tracking list.'}
         </p>
@@ -160,15 +164,18 @@ export const MediaModal: React.FC<MediaModalProps> = ({
               placeholder={`e.g. Enter ${module.singularName} title`}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              readOnly={readOnly}
               className="w-full glass-input px-3.5 py-2.5 rounded-xl text-sm"
             />
           </div>
 
           {/* Plugged-in Category Custom Form Fields */}
-          <FormFields formData={customFormData} onChange={handleCustomFormChange} />
+          <fieldset disabled={readOnly}>
+            <FormFields formData={customFormData} onChange={handleCustomFormChange} />
+          </fieldset>
 
           {/* Status & Rating Row */}
-          <div className="grid grid-cols-2 gap-3">
+          <fieldset disabled={readOnly} className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Status</label>
               <select
@@ -205,7 +212,7 @@ export const MediaModal: React.FC<MediaModalProps> = ({
                 ))}
               </div>
             </div>
-          </div>
+          </fieldset>
 
           {/* Notes */}
           <div>
@@ -215,6 +222,7 @@ export const MediaModal: React.FC<MediaModalProps> = ({
               placeholder="Personal thoughts, favorite quotes, review..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              readOnly={readOnly}
               className="w-full glass-input px-3.5 py-2.5 rounded-xl text-sm"
             />
           </div>
@@ -226,9 +234,9 @@ export const MediaModal: React.FC<MediaModalProps> = ({
               onClick={onClose}
               className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors"
             >
-              Cancel
+              {readOnly ? 'Close' : 'Cancel'}
             </button>
-            <button
+            {!readOnly && <button
               type="submit"
               disabled={isSubmitting}
               className={`px-5 py-2.5 rounded-xl ${module.color.button} text-white font-bold text-xs transition-all flex items-center space-x-1.5`}
@@ -241,7 +249,7 @@ export const MediaModal: React.FC<MediaModalProps> = ({
                     ? 'Add to List'
                     : 'Save Record'}
               </span>
-            </button>
+            </button>}
           </div>
         </form>
       </div>

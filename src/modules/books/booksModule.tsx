@@ -46,6 +46,11 @@ export const booksModule: CategoryModule<BookRecord> = {
   ],
   defaultStatus: 'plan_to_read',
   api: {
+    getCatalog: async () => {
+      const data = await booksApi.getAll();
+      return data.map((b) => withBookMeta(b, false));
+    },
+    getCatalogById: async (id) => withBookMeta(await booksApi.getById(id), false),
     getAll: async () => {
       const data = await booksApi.getList();
       return data.map((b) => withBookMeta(b, true));
