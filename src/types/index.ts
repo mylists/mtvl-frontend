@@ -21,6 +21,19 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface APIToken {
+  id: string;
+  user_id: string;
+  token: string;
+  name: string;
+  created_at: string;
+  last_used_at?: string | null;
+}
+
+export interface CreateAPITokenPayload {
+  name: string;
+}
+
 export interface CategoryInfo {
   category: string; // e.g. "movies", "tv_shows", "books"
   display_name: string;

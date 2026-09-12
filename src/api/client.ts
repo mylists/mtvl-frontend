@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import axios, { AxiosError } from 'axios';
 import {
+  APIToken,
   AuthResponse,
   Book,
   BookListItem,
@@ -111,6 +112,27 @@ export const authApi = {
     const res = await apiClient.delete<{ message: string }>('/api/v1/auth/me');
     return res.data;
   },
+
+  listTokens: async (): Promise<APIToken[]> => {
+    const res = await apiClient.get<APIToken[]>('/api/v1/auth/tokens');
+    return res.data ?? [];
+  },
+
+  createToken: async (name: string): Promise<APIToken> => {
+    const res = await apiClient.post<APIToken>('/api/v1/auth/tokens', { name });
+    return res.data;
+  },
+
+  revokeToken: async (id: string): Promise<{ message: string }> => {
+    const res = await apiClient.delete<{ message: string }>(`/api/v1/auth/tokens/${id}`);
+    return res.data;
+  },
+};
+
+export const tokensApi = {
+  list: authApi.listTokens,
+  create: authApi.createToken,
+  revoke: authApi.revokeToken,
 };
 
 // Categories Discovery API
