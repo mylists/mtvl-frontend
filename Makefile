@@ -56,14 +56,11 @@ upload-arch: sync-version
 		--target deploy .
 
 manifest: ## Create and push multi-arch Docker manifest
-	$(DOCKER) manifest create $(REGISTRY)/$(IMAGE):$(VERSION) \
-		--amend $(REGISTRY)/$(IMAGE):$(VERSION)-amd64 \
-		--amend $(REGISTRY)/$(IMAGE):$(VERSION)-arm64
-	$(DOCKER) manifest push $(REGISTRY)/$(IMAGE):$(VERSION)
-	$(DOCKER) manifest create $(REGISTRY)/$(IMAGE):latest \
-		--amend $(REGISTRY)/$(IMAGE):$(VERSION)-amd64 \
-		--amend $(REGISTRY)/$(IMAGE):$(VERSION)-arm64
-	$(DOCKER) manifest push $(REGISTRY)/$(IMAGE):latest
+	$(DOCKER) buildx imagetools create \
+		--tag $(REGISTRY)/$(IMAGE):$(VERSION) \
+		--tag $(REGISTRY)/$(IMAGE):latest \
+		$(REGISTRY)/$(IMAGE):$(VERSION)-amd64 \
+		$(REGISTRY)/$(IMAGE):$(VERSION)-arm64
 
 upload: sync-version ## Upload the Docker image to the registry
 	$(DOCKER) buildx build \
