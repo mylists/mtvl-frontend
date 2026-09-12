@@ -176,7 +176,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
               item={item}
               readOnly={!isPersonalList}
               onDelete={onDeleteItem}
-              onUpdateProgress={onUpdateProgress}
+              onUpdateProgress={isPersonalList ? onUpdateProgress : undefined}
             />
           ))}
         </div>

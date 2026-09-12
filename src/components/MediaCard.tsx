@@ -37,7 +37,10 @@ export const MediaCard: React.FC<MediaCardProps> = ({
     }
   };
 
-  const getStatusBadge = (status: MediaStatus) => {
+  const isCatalog = readOnly || item.onList === false;
+
+  const getStatusBadge = (status?: MediaStatus) => {
+    if (!status) return null;
     const isBook = module.id === 'books';
     switch (status) {
       case 'watching':
@@ -79,7 +82,8 @@ export const MediaCard: React.FC<MediaCardProps> = ({
     }
   };
 
-  const renderStars = (rating: number) => {
+  const renderStars = (rating?: number) => {
+    if (rating === undefined || rating === null) return null;
     return (
       <div className="flex items-center space-x-0.5">
         {[1, 2, 3, 4, 5].map((star) => (
@@ -114,9 +118,11 @@ export const MediaCard: React.FC<MediaCardProps> = ({
             </h3>
           </div>
 
-          {readOnly ? (
+          {isCatalog ? (
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Catalog</span>
-          ) : getStatusBadge(item.status)}
+          ) : (
+            getStatusBadge(item.status)
+          )}
         </div>
 
         <div className="mb-4">
@@ -131,7 +137,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({
       </div>
 
       <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
-        <div>{!readOnly && renderStars(item.rating)}</div>
+        <div>{!isCatalog && renderStars(item.rating)}</div>
 
         <div className="flex items-center space-x-1 opacity-90 group-hover:opacity-100 transition-opacity">
           <button
@@ -141,20 +147,24 @@ export const MediaCard: React.FC<MediaCardProps> = ({
           >
             {copied ? <Copy className="w-4 h-4 text-emerald-400" /> : <Link2 className="w-4 h-4" />}
           </button>
-          {!readOnly && <Link
-            to={href}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-            title="Edit item"
-          >
-            <Edit3 className="w-4 h-4" />
-          </Link>}
-          {!readOnly && <button
-            onClick={() => onDelete(item.id)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-            title="Remove from list"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>}
+          {!isCatalog && (
+            <Link
+              to={href}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              title="Edit item"
+            >
+              <Edit3 className="w-4 h-4" />
+            </Link>
+          )}
+          {!isCatalog && (
+            <button
+              onClick={() => onDelete(item.id)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              title="Remove from list"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>

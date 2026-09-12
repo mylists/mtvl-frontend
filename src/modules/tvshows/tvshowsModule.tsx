@@ -4,22 +4,32 @@ import { isNotFoundError, tvshowsApi } from '../../api/client';
 import { TVShow, TVShowListItem } from '../../types';
 import { CardDetailsProps, CategoryModule, FormFieldsProps, statsForCategory } from '../types';
 
-type TVShowRecord = TVShowListItem & { categoryType?: string; onList?: boolean };
+type TVShowRecord = Partial<TVShowListItem> & TVShow & { categoryType?: string; onList?: boolean };
 
 function withTVMeta(item: TVShow | TVShowListItem, onList: boolean): TVShowRecord {
   return {
-    rating: 0,
-    notes: '',
-    status: 'watching',
-    current_season: 1,
-    current_episode: 0,
     ...item,
     categoryType: 'tvshows',
     onList,
   };
 }
 
-const TVShowFormFields: React.FC<FormFieldsProps> = ({ formData, onChange }) => {
+const TVShowFormFields: React.FC<FormFieldsProps> = ({ formData, onChange, readOnly }) => {
+  if (readOnly) {
+    return (
+      <div>
+        <label className="block text-xs font-semibold text-slate-300 mb-1">Total Episodes</label>
+        <input
+          type="number"
+          min="0"
+          value={formData.total_episodes ?? ''}
+          readOnly
+          className="w-full glass-input px-3 py-2 rounded-xl text-sm"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-3 gap-3">
       <div>
@@ -56,8 +66,21 @@ const TVShowFormFields: React.FC<FormFieldsProps> = ({ formData, onChange }) => 
   );
 };
 
-const TVShowCardDetails: React.FC<CardDetailsProps> = ({ item, onUpdateProgress }) => {
-  const tv = item as TVShowListItem;
+const TVShowCardDetails: React.FC<CardDetailsProps> = ({ item, readOnly, onUpdateProgress }) => {
+  const tv = item as TVShowRecord;
+  const isCatalog = readOnly || item.onList === false;
+
+  if (isCatalog) {
+    if (!tv.total_episodes) return null;
+    return (
+      <div className="space-y-1 text-xs text-slate-400">
+        <p>
+          Episodes: <strong className="text-slate-200">{tv.total_episodes}</strong>
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center justify-between bg-slate-900/60 p-2 rounded-xl border border-slate-800 text-xs text-slate-400">
       <span>

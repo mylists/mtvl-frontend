@@ -4,28 +4,26 @@ import { isNotFoundError, moviesApi } from '../../api/client';
 import { Movie, MovieListItem } from '../../types';
 import { CardDetailsProps, CategoryModule, FormFieldsProps, statsForCategory } from '../types';
 
-type MovieRecord = MovieListItem & { categoryType?: string; onList?: boolean };
+type MovieRecord = Partial<MovieListItem> & Movie & { categoryType?: string; onList?: boolean };
 
 function withMovieMeta(item: Movie | MovieListItem, onList: boolean): MovieRecord {
   return {
-    rating: 0,
-    notes: '',
-    status: 'plan_to_watch',
     ...item,
     categoryType: 'movies',
     onList,
   };
 }
 
-const MovieFormFields: React.FC<FormFieldsProps> = ({ formData, onChange }) => {
+const MovieFormFields: React.FC<FormFieldsProps> = ({ formData, onChange, readOnly }) => {
   return (
     <div className="grid grid-cols-2 gap-3">
       <div>
         <label className="block text-xs font-semibold text-slate-300 mb-1">Release Year</label>
         <input
           type="number"
-          value={formData.release_year ?? new Date().getFullYear()}
-          onChange={(e) => onChange({ release_year: Number(e.target.value) })}
+          value={formData.release_year ?? ''}
+          onChange={(e) => onChange({ release_year: e.target.value ? Number(e.target.value) : undefined })}
+          readOnly={readOnly}
           className="w-full glass-input px-3.5 py-2 rounded-xl text-sm"
         />
       </div>
@@ -36,6 +34,7 @@ const MovieFormFields: React.FC<FormFieldsProps> = ({ formData, onChange }) => {
           placeholder="Christopher Nolan"
           value={formData.director ?? ''}
           onChange={(e) => onChange({ director: e.target.value })}
+          readOnly={readOnly}
           className="w-full glass-input px-3.5 py-2 rounded-xl text-sm"
         />
       </div>

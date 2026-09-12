@@ -83,6 +83,7 @@ export const MediaModal: React.FC<MediaModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) return;
     if (!title.trim()) {
       setError('Title is required');
       return;
@@ -126,7 +127,7 @@ export const MediaModal: React.FC<MediaModalProps> = ({
 
         <div className="flex items-start justify-between gap-3 pr-10 mb-1">
           <h2 className="text-xl font-extrabold text-white">
-            {initialData ? 'Edit' : 'Add New'} {module.singularName}
+            {initialData ? (readOnly ? 'View' : 'Edit') : 'Add New'} {module.singularName}
           </h2>
           {initialData?.id && (
             <button
@@ -171,61 +172,65 @@ export const MediaModal: React.FC<MediaModalProps> = ({
 
           {/* Plugged-in Category Custom Form Fields */}
           <fieldset disabled={readOnly}>
-            <FormFields formData={customFormData} onChange={handleCustomFormChange} />
+            <FormFields formData={customFormData} onChange={handleCustomFormChange} readOnly={readOnly} />
           </fieldset>
 
-          {/* Status & Rating Row */}
-          <fieldset disabled={readOnly} className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Status</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as MediaStatus)}
-                className="w-full glass-input px-3 py-2.5 rounded-xl text-sm font-medium bg-slate-900 cursor-pointer"
-              >
-                {module.statuses.map((st) => (
-                  <option key={st.value} value={st.value}>
-                    {st.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Rating (1-5)</label>
-              <div className="flex items-center space-x-1.5 py-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    type="button"
-                    key={star}
-                    onClick={() => setRating(star)}
-                    className="p-1 hover:scale-110 transition-transform"
+          {/* User Specific Fields: Status, Rating, Notes (Only rendered for personal list) */}
+          {!readOnly && (
+            <>
+              {/* Status & Rating Row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Status</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as MediaStatus)}
+                    className="w-full glass-input px-3 py-2.5 rounded-xl text-sm font-medium bg-slate-900 cursor-pointer"
                   >
-                    <Star
-                      className={`w-6 h-6 ${
-                        star <= rating
-                          ? 'fill-amber-400 text-amber-400'
-                          : 'text-slate-700 hover:text-slate-500'
-                      }`}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </fieldset>
+                    {module.statuses.map((st) => (
+                      <option key={st.value} value={st.value}>
+                        {st.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-          {/* Notes */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Notes / Review</label>
-            <textarea
-              rows={3}
-              placeholder="Personal thoughts, favorite quotes, review..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              readOnly={readOnly}
-              className="w-full glass-input px-3.5 py-2.5 rounded-xl text-sm"
-            />
-          </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Rating (1-5)</label>
+                  <div className="flex items-center space-x-1.5 py-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        type="button"
+                        key={star}
+                        onClick={() => setRating(star)}
+                        className="p-1 hover:scale-110 transition-transform"
+                      >
+                        <Star
+                          className={`w-6 h-6 ${
+                            star <= rating
+                              ? 'fill-amber-400 text-amber-400'
+                              : 'text-slate-700 hover:text-slate-500'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Notes / Review</label>
+                <textarea
+                  rows={3}
+                  placeholder="Personal thoughts, favorite quotes, review..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full glass-input px-3.5 py-2.5 rounded-xl text-sm"
+                />
+              </div>
+            </>
+          )}
 
           {/* Submit */}
           <div className="pt-2 flex justify-end space-x-2">

@@ -14,23 +14,26 @@ export interface CategoryModuleColor {
 export interface FormFieldsProps<T = any> {
   formData: T;
   onChange: (updates: Partial<T>) => void;
+  readOnly?: boolean;
 }
 
 export interface CardDetailsProps<T = any> {
   item: T;
+  readOnly?: boolean;
   onUpdateProgress?: (item: T, increment: number) => void;
 }
 
 export interface BaseMediaRecord {
   id: string;
   title: string;
-  status: MediaStatus;
-  rating: number;
+  status?: MediaStatus;
+  rating?: number;
   notes?: string;
   categoryType?: string;
   onList?: boolean;
   created_at?: string;
   updated_at?: string;
+  [key: string]: any;
 }
 
 export interface CategoryModuleApi<T = MediaItem> {

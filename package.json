@@ -1,7 +1,7 @@
 {
   "name": "mtvl-frontend",
   "private": true,
-  "version": "13.34.9",
+  "version": "16.2.2",
   "type": "module",
   "scripts": {
     "dev": "vite",

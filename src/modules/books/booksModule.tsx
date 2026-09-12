@@ -4,13 +4,10 @@ import { booksApi, isNotFoundError } from '../../api/client';
 import { Book, BookListItem } from '../../types';
 import { CardDetailsProps, CategoryModule, FormFieldsProps, statsForCategory } from '../types';
 
-type BookRecord = BookListItem & { categoryType?: string; onList?: boolean };
+type BookRecord = Partial<BookListItem> & Book & { categoryType?: string; onList?: boolean };
 
 function withBookMeta(item: Book | BookListItem, onList: boolean): BookRecord {
   return {
-    rating: 0,
-    notes: '',
-    status: 'plan_to_read',
     ...item,
     categoryType: 'books',
     onList,

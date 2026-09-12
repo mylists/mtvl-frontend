@@ -100,10 +100,25 @@ export interface BookListItem extends Book {
 
 export type ListItem = MovieListItem | TVShowListItem | BookListItem;
 
-export type MediaItem = ListItem & {
+export type MediaItem = {
+  id: string;
+  title: string;
   categoryType: 'movies' | 'tvshows' | 'books' | string;
   /** False when the record is a catalog item that is not on the current user's list. */
   onList?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  // User list specific fields
+  status?: MediaStatus;
+  rating?: number;
+  notes?: string;
+  current_season?: number;
+  current_episode?: number;
+  // Catalog specific fields
+  release_year?: number;
+  director?: string;
+  total_episodes?: number;
+  [key: string]: any;
 };
 
 export interface UserMovieLink {
