@@ -1,5 +1,5 @@
 import React from 'react';
-import { MediaItem, MediaStatus, StatsOverview } from '../types';
+import { ListQueryParams, MediaItem, MediaStatus, StatsOverview } from '../types';
 
 export interface CategoryModuleColor {
   badge: string;
@@ -38,10 +38,10 @@ export interface BaseMediaRecord {
 
 export interface CategoryModuleApi<T = MediaItem> {
   /** Read the shared catalog. This endpoint is public. */
-  getCatalog: () => Promise<T[]>;
+  getCatalog: (params?: ListQueryParams) => Promise<T[]>;
   /** Read one shared catalog item. This endpoint is public. */
   getCatalogById: (id: string) => Promise<T>;
-  getAll: () => Promise<T[]>;
+  getAll: (params?: ListQueryParams) => Promise<T[]>;
   getById: (id: string) => Promise<T>;
   create: (data: Partial<T>) => Promise<T>;
   update: (id: string, data: Partial<T>) => Promise<T>;

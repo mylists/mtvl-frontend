@@ -85,13 +85,13 @@ export const moviesModule: CategoryModule<MovieRecord> = {
   ],
   defaultStatus: 'plan_to_watch',
   api: {
-    getCatalog: async () => {
-      const data = await moviesApi.getAll();
+    getCatalog: async (params) => {
+      const data = await moviesApi.getAll(params);
       return data.map((m) => withMovieMeta(m, false));
     },
     getCatalogById: async (id) => withMovieMeta(await moviesApi.getById(id), false),
-    getAll: async () => {
-      const data = await moviesApi.getList();
+    getAll: async (params) => {
+      const data = await moviesApi.getList(params);
       return data.map((m) => withMovieMeta(m, true));
     },
     getById: async (id) => {

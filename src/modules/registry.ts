@@ -65,8 +65,8 @@ export function createGenericCategoryModule(category: string, info?: Partial<Cat
     ],
     defaultStatus: 'watching',
     api: {
-      getCatalog: async () => {
-        const res = await apiClient.get(endpoint);
+      getCatalog: async (params) => {
+        const res = await apiClient.get(endpoint, { params: params?.q ? { q: params.q } : undefined });
         return unwrapItems<MediaItem>(res.data).map((item) => ({
           ...item,
           categoryType: category,
@@ -77,8 +77,8 @@ export function createGenericCategoryModule(category: string, info?: Partial<Cat
         const res = await apiClient.get<MediaItem>(`${endpoint}/${id}`);
         return { ...res.data, categoryType: category, onList: false };
       },
-      getAll: async () => {
-        const res = await apiClient.get(`${endpoint}/list`);
+      getAll: async (params) => {
+        const res = await apiClient.get(`${endpoint}/list`, { params: params?.q ? { q: params.q } : undefined });
         return unwrapItems<MediaItem>(res.data).map((item) => ({
           ...item,
           categoryType: category,

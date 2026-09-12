@@ -127,13 +127,13 @@ export const tvshowsModule: CategoryModule<TVShowRecord> = {
   ],
   defaultStatus: 'watching',
   api: {
-    getCatalog: async () => {
-      const data = await tvshowsApi.getAll();
+    getCatalog: async (params) => {
+      const data = await tvshowsApi.getAll(params);
       return data.map((t) => withTVMeta(t, false));
     },
     getCatalogById: async (id) => withTVMeta(await tvshowsApi.getById(id), false),
-    getAll: async () => {
-      const data = await tvshowsApi.getList();
+    getAll: async (params) => {
+      const data = await tvshowsApi.getList(params);
       return data.map((t) => withTVMeta(t, true));
     },
     getById: async (id) => {
