@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { ArrowUpDown, Filter, Plus, Search } from 'lucide-react';
-import { newItemPath } from '../lib/paths';
+import { ArrowUpDown, Bookmark, Filter, Globe, Plus, Search } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { categoryPath, newItemPath, publicCategoryPath } from '../lib/paths';
 import { getCategoryModule } from '../modules';
 import { MediaItem } from '../types';
 import { MediaCard } from './MediaCard';
@@ -12,6 +13,7 @@ interface MediaGridProps {
   items: MediaItem[];
   isLoading: boolean;
   isPersonalList: boolean;
+  isPublicView?: boolean;
   onDeleteItem: (id: string) => void;
   onUpdateProgress?: (item: MediaItem, increment: number) => void;
 }
@@ -22,9 +24,11 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
   items,
   isLoading,
   isPersonalList,
+  isPublicView = false,
   onDeleteItem,
   onUpdateProgress,
 }) => {
+  const { isAuthenticated } = useAuth();
   const module = getCategoryModule(categoryType);
   const HeaderIcon = module.icon;
   const { search } = useLocation();
@@ -67,7 +71,18 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
             <HeaderIcon className={`w-6 h-6 ${module.color.iconText}`} />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">{module.displayName}</h1>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-2xl font-extrabold text-white tracking-tight">{module.displayName}</h1>
+              <span
+                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                  isPersonalList
+                    ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                    : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+                }`}
+              >
+                {isPersonalList ? 'My List' : 'Public Catalog'}
+              </span>
+            </div>
             <p className="text-xs text-slate-400">
               {isPersonalList
                 ? `Showing ${filteredItems.length} of ${items.length} items on your list`
@@ -76,17 +91,46 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
           </div>
         </div>
 
-        {isPersonalList ? (
-          <Link
-            to={addHref}
-            className={`px-5 py-2.5 rounded-xl ${module.color.button} text-white font-bold text-sm transition-all flex items-center justify-center space-x-2`}
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add New {module.singularName}</span>
-          </Link>
-        ) : (
-          <p className="text-xs text-slate-400">Sign in to create records or add them to your list.</p>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          {isAuthenticated && (
+            <div className="flex items-center bg-slate-900/90 p-1 rounded-2xl border border-slate-800 shadow-inner">
+              <Link
+                to={categoryPath(categoryType)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 ${
+                  !isPublicView
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Bookmark className="w-3.5 h-3.5" />
+                <span>My List</span>
+              </Link>
+              <Link
+                to={publicCategoryPath(categoryType)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 ${
+                  isPublicView
+                    ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/20'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>Public Catalog</span>
+              </Link>
+            </div>
+          )}
+
+          {isAuthenticated ? (
+            <Link
+              to={addHref}
+              className={`px-5 py-2.5 rounded-xl ${module.color.button} text-white font-bold text-sm transition-all flex items-center justify-center space-x-2`}
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add New {module.singularName}</span>
+            </Link>
+          ) : (
+            <p className="text-xs text-slate-400">Sign in to create records or add them to your list.</p>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-3 justify-between items-center glass-panel p-4 rounded-2xl border border-slate-800">
@@ -101,34 +145,36 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
           />
         </div>
 
-        {isPersonalList && <div className="flex items-center space-x-1 overflow-x-auto w-full md:w-auto py-1">
-          <button
-            onClick={() => updateParam('status', 'all', 'all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-              statusFilter === 'all'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-            }`}
-          >
-            All Statuses
-          </button>
-          {module.statuses.map((st) => {
-            const isActive = statusFilter === st.value;
-            return (
-              <button
-                key={st.value}
-                onClick={() => updateParam('status', st.value, 'all')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                  isActive
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                }`}
-              >
-                {st.label}
-              </button>
-            );
-          })}
-        </div>}
+        {isPersonalList && (
+          <div className="flex items-center space-x-1 overflow-x-auto w-full md:w-auto py-1">
+            <button
+              onClick={() => updateParam('status', 'all', 'all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                statusFilter === 'all'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              }`}
+            >
+              All Statuses
+            </button>
+            {module.statuses.map((st) => {
+              const isActive = statusFilter === st.value;
+              return (
+                <button
+                  key={st.value}
+                  onClick={() => updateParam('status', st.value, 'all')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  }`}
+                >
+                  {st.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="flex items-center space-x-2 w-full md:w-auto justify-end">
           <ArrowUpDown className="w-4 h-4 text-slate-400" />
@@ -175,6 +221,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
               key={item.id}
               item={item}
               readOnly={!isPersonalList}
+              isPublicView={isPublicView}
               onDelete={onDeleteItem}
               onUpdateProgress={isPersonalList ? onUpdateProgress : undefined}
             />

@@ -82,6 +82,7 @@ export const AppContent: React.FC = () => {
                 />
               }
             />
+            <Route path="/public/:category/:itemId?" element={<CategoryPage isPublicView={true} />} />
             <Route path="/:category/:itemId?" element={<CategoryPage />} />
           </Routes>
         </main>

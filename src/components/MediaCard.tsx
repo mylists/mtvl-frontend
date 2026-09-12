@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { CheckCircle, Clock, Copy, Edit3, Eye, Link2, Star, Trash2, XCircle } from 'lucide-react';
-import { itemPath, itemShareUrl } from '../lib/paths';
+import { itemPath, itemShareUrl, publicItemPath } from '../lib/paths';
 import { getCategoryModule } from '../modules';
 import { MediaItem, MediaStatus } from '../types';
 
 interface MediaCardProps {
   item: MediaItem;
   readOnly?: boolean;
+  isPublicView?: boolean;
   onDelete: (id: string) => void;
   onUpdateProgress?: (item: MediaItem, increment: number) => void;
 }
@@ -15,6 +16,7 @@ interface MediaCardProps {
 export const MediaCard: React.FC<MediaCardProps> = ({
   item,
   readOnly = false,
+  isPublicView = false,
   onDelete,
   onUpdateProgress,
 }) => {
@@ -22,14 +24,17 @@ export const MediaCard: React.FC<MediaCardProps> = ({
   const CategoryIcon = module.icon;
   const CardDetails = module.CardDetails;
   const location = useLocation();
-  const href = { pathname: itemPath(item.categoryType, item.id), search: location.search };
+  const href = {
+    pathname: isPublicView ? publicItemPath(item.categoryType, item.id) : itemPath(item.categoryType, item.id),
+    search: location.search,
+  };
   const [copied, setCopied] = useState(false);
 
   const copyShareLink = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(itemShareUrl(item.categoryType, item.id));
+      await navigator.clipboard.writeText(itemShareUrl(item.categoryType, item.id, isPublicView));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch (err) {

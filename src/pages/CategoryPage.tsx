@@ -1,19 +1,27 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { MediaGrid } from '../components/MediaGrid';
 import { MediaModal } from '../components/MediaModal';
 import { useAuth } from '../context/AuthContext';
 import { useCategory } from '../context/CategoryContext';
 import { formatPageTitle } from '../lib/constants';
-import { categoryPath, normalizeCategorySlug } from '../lib/paths';
+import { categoryPath, normalizeCategorySlug, publicCategoryPath } from '../lib/paths';
 import { getCategoryModule } from '../modules';
 import { MediaItem } from '../types';
 
-export const CategoryPage: React.FC = () => {
+interface CategoryPageProps {
+  isPublicView?: boolean;
+}
+
+export const CategoryPage: React.FC<CategoryPageProps> = ({ isPublicView = false }) => {
   const { category: categoryParam, itemId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { categories, refreshStats, libraryRevision } = useCategory();
+
+  const isPublic = Boolean(isPublicView || location.pathname.startsWith('/public/'));
+  const isPersonal = isAuthenticated && !isPublic;
 
   const activeCategory = normalizeCategorySlug(categoryParam || '');
   const isNewItem = itemId === 'new';
@@ -29,7 +37,10 @@ export const CategoryPage: React.FC = () => {
   const categoryDisplayName = currentCategoryInfo?.display_name || module.displayName;
 
   const closeItem = () => {
-    navigate({ pathname: categoryPath(activeCategory), search: window.location.search });
+    navigate({
+      pathname: isPublic ? publicCategoryPath(activeCategory) : categoryPath(activeCategory),
+      search: window.location.search,
+    });
   };
 
   const loadCategoryItems = useCallback(async () => {
@@ -41,7 +52,7 @@ export const CategoryPage: React.FC = () => {
     setIsLoadingItems(true);
     try {
       const categoryApi = getCategoryModule(activeCategory, currentCategoryInfo).api;
-      const data = isAuthenticated ? await categoryApi.getAll() : await categoryApi.getCatalog();
+      const data = isPersonal ? await categoryApi.getAll() : await categoryApi.getCatalog();
       setItems(data);
     } catch (err) {
       console.error('Failed to load category items', err);
@@ -49,22 +60,23 @@ export const CategoryPage: React.FC = () => {
     } finally {
       setIsLoadingItems(false);
     }
-  }, [activeCategory, currentCategoryInfo, isAuthenticated]);
+  }, [activeCategory, currentCategoryInfo, isPersonal]);
 
   useEffect(() => {
     loadCategoryItems();
   }, [loadCategoryItems, libraryRevision]);
 
   useEffect(() => {
+    const prefix = isPublic ? `${categoryDisplayName} (Catalog)` : categoryDisplayName;
     if (editingItem?.title) {
-      document.title = formatPageTitle(categoryDisplayName, editingItem.title);
+      document.title = formatPageTitle(prefix, editingItem.title);
     } else {
-      document.title = formatPageTitle(categoryDisplayName);
+      document.title = formatPageTitle(prefix);
     }
     return () => {
       document.title = formatPageTitle();
     };
-  }, [categoryDisplayName, editingItem]);
+  }, [categoryDisplayName, editingItem, isPublic]);
 
   useEffect(() => {
     if (!itemId || isNewItem) {
@@ -88,7 +100,7 @@ export const CategoryPage: React.FC = () => {
     let cancelled = false;
     setIsResolvingItem(true);
     const categoryApi = getCategoryModule(activeCategory, currentCategoryInfo).api;
-    const loadItem = isAuthenticated
+    const loadItem = isPersonal
       ? categoryApi.getById(resolvedItemId)
       : categoryApi.getCatalogById(resolvedItemId);
 
@@ -108,7 +120,7 @@ export const CategoryPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [activeCategory, currentCategoryInfo, isAuthenticated, isNewItem, itemId, items, resolvedItemId]);
+  }, [activeCategory, currentCategoryInfo, isPersonal, isNewItem, itemId, items, resolvedItemId]);
 
   const handleSaveMediaItem = async (payload: Partial<MediaItem>) => {
     const cat = payload.categoryType || activeCategory;
@@ -160,7 +172,8 @@ export const CategoryPage: React.FC = () => {
         categoryType={activeCategory}
         items={items}
         isLoading={isLoadingItems || isResolvingItem}
-        isPersonalList={isAuthenticated}
+        isPersonalList={isPersonal}
+        isPublicView={isPublic}
         onDeleteItem={handleDeleteMediaItem}
         onUpdateProgress={handleUpdateProgress}
       />
