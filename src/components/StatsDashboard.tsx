@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Activity, ArrowRight, Film, Star, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCategory } from '../context/CategoryContext';
+import { APP_NAME } from '../lib/constants';
 import { categoryPath, newItemPath } from '../lib/paths';
 import { getAllCategoryModules, getCategoryModule } from '../modules';
 
@@ -31,7 +32,7 @@ export const StatsDashboard: React.FC<StatsDashboardProps> = ({ onOpenAuth }) =>
         <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center mb-4 shadow-xl">
           <Film className="w-8 h-8 text-indigo-400" />
         </div>
-        <h2 className="text-3xl font-extrabold text-white mb-2">Welcome to MTVL</h2>
+        <h2 className="text-3xl font-extrabold text-white mb-2">Welcome to {APP_NAME}</h2>
         <p className="text-slate-400 max-w-md mb-6 leading-relaxed">
           Log in or create an account to start tracking all your stuffs.
         </p>

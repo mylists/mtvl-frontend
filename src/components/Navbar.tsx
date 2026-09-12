@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCategory } from '../context/CategoryContext';
+import { APP_NAME } from '../lib/constants';
 
 interface NavbarProps {
   onOpenImportExport: () => void;
@@ -40,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div>
           <div className="flex items-center space-x-2">
             <span className="font-extrabold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-indigo-400">
-              MTVL
+              {APP_NAME}
             </span>
             <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
               v{__APP_VERSION__}

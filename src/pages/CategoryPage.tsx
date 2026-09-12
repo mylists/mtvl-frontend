@@ -4,6 +4,7 @@ import { MediaGrid } from '../components/MediaGrid';
 import { MediaModal } from '../components/MediaModal';
 import { useAuth } from '../context/AuthContext';
 import { useCategory } from '../context/CategoryContext';
+import { formatPageTitle } from '../lib/constants';
 import { categoryPath, normalizeCategorySlug } from '../lib/paths';
 import { getCategoryModule } from '../modules';
 import { MediaItem } from '../types';
@@ -56,12 +57,12 @@ export const CategoryPage: React.FC = () => {
 
   useEffect(() => {
     if (editingItem?.title) {
-      document.title = `${editingItem.title} · ${categoryDisplayName} · MTVL`;
+      document.title = formatPageTitle(categoryDisplayName, editingItem.title);
     } else {
-      document.title = `${categoryDisplayName} · MTVL`;
+      document.title = formatPageTitle(categoryDisplayName);
     }
     return () => {
-      document.title = 'MTVL';
+      document.title = formatPageTitle();
     };
   }, [categoryDisplayName, editingItem]);
 

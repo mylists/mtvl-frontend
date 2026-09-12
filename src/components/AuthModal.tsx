@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Lock, Mail, User as UserIcon, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { APP_NAME } from '../lib/constants';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -71,7 +72,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         <p className="text-xs text-slate-400 mb-6">
           {isRegisterMode
             ? 'Sign up to start tracking your media library.'
-            : 'Enter your credentials to access your MTVL collection.'}
+            : `Enter your credentials to access your ${APP_NAME} collection.`}
         </p>
 
         {error && (

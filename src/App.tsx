@@ -9,6 +9,7 @@ import { StatsDashboard } from './components/StatsDashboard';
 import { UserProfileModal } from './components/UserProfileModal';
 import { useAuth } from './context/AuthContext';
 import { useCategory } from './context/CategoryContext';
+import { formatPageTitle } from './lib/constants';
 import { parseAppLocation, searchPath } from './lib/paths';
 import { CategoryPage } from './pages/CategoryPage';
 
@@ -37,9 +38,9 @@ export const AppContent: React.FC = () => {
   useEffect(() => {
     const parsed = parseAppLocation(location.pathname);
     if (parsed.isSearch) {
-      document.title = 'Search · MTVL';
+      document.title = formatPageTitle('Search');
     } else if (parsed.isDashboard) {
-      document.title = 'MTVL';
+      document.title = formatPageTitle();
     }
   }, [location.pathname]);
 
