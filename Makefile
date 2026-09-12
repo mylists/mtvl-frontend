@@ -6,7 +6,7 @@ IMAGE = $(file < TAG)
 VERSION = $(file < VERSION)
 TAG = $(IMAGE):$(VERSION)
 
-.PHONY: help install dev build lint preview clean sync-version image-build upload
+.PHONY: help install dev build lint preview clean sync-version image-build upload upload-arch manifest
 
 # Default target
 .DEFAULT_GOAL := help
@@ -44,6 +44,26 @@ image-build: sync-version ## Build the Docker image
 		--tag $(REGISTRY)/$(IMAGE):$(VERSION) \
 		--tag $(REGISTRY)/$(IMAGE):latest \
 		--target deploy .
+
+## Upload the Docker image for a specific architecture (ARCH=amd64|arm64)
+upload-arch: sync-version
+	$(DOCKER) buildx build \
+		--file docker/Dockerfile \
+		--build-arg VITE_API_BASE_URL=$(VITE_API_BASE_URL) \
+		--push \
+		--platform linux/$(ARCH) \
+		--tag $(REGISTRY)/$(IMAGE):$(VERSION)-$(ARCH) \
+		--target deploy .
+
+manifest: ## Create and push multi-arch Docker manifest
+	$(DOCKER) manifest create $(REGISTRY)/$(IMAGE):$(VERSION) \
+		--amend $(REGISTRY)/$(IMAGE):$(VERSION)-amd64 \
+		--amend $(REGISTRY)/$(IMAGE):$(VERSION)-arm64
+	$(DOCKER) manifest push $(REGISTRY)/$(IMAGE):$(VERSION)
+	$(DOCKER) manifest create $(REGISTRY)/$(IMAGE):latest \
+		--amend $(REGISTRY)/$(IMAGE):$(VERSION)-amd64 \
+		--amend $(REGISTRY)/$(IMAGE):$(VERSION)-arm64
+	$(DOCKER) manifest push $(REGISTRY)/$(IMAGE):latest
 
 upload: sync-version ## Upload the Docker image to the registry
 	$(DOCKER) buildx build \
